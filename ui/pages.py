@@ -164,6 +164,22 @@ def sidebar() -> None:
             if c2.button("Sign out", key="logout"):
                 state.logout()
                 st.rerun()
+            with st.expander("🔑 Change my password"):
+                with st.form("change_pw", clear_on_submit=True):
+                    old_pw = st.text_input("Current password", type="password")
+                    new_pw = st.text_input("New password (10+ characters, letters and digits)", type="password")
+                    new_pw2 = st.text_input("Repeat new password", type="password")
+                    if st.form_submit_button("Change password"):
+                        from security.auth import AuthError, AuthService
+
+                        if new_pw != new_pw2:
+                            st.error("The new passwords do not match.")
+                        else:
+                            try:
+                                AuthService(state.base_settings()).change_password(who, old_pw, new_pw)
+                                st.success("Password changed. Use it next time you sign in.")
+                            except AuthError as exc:
+                                st.error(exc.user_message)
         if st.button("✏️  New chat", use_container_width=True, type="primary"):
             conv = state.conversations().create([i.doc_id for i in state.active_indexes()])
             st.session_state["conv_id"] = conv.id

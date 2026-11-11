@@ -117,3 +117,39 @@ def test_viewer_cannot_upload_anywhere(make_settings, server):
         svc.ingest(b"Some text about pumps.", "x.txt", Principal("v1", "t1", ("viewer",)))
     assert "upload_denied" in [e.action for e in svc.repo.list_audit("t1")]
     assert svc.ingest(b"Some text about pumps.", "x.txt", Principal("e1", "t1", ("editor",))).status == "new"
+
+
+def test_admin_reset_password_unlocks_and_is_tenant_scoped(make_settings):
+    auth = AuthService(make_settings(), Repository(f"sqlite:///{make_settings().data_dir}/r.db"))
+    auth.create_user("root", PW, ["admin"], "t1")
+    admin = auth.authenticate("root", PW)
+    bob = auth.create_user("bob", PW, ["viewer"], "t1", actor=admin)
+    token = auth.issue_token(auth.authenticate("bob", PW))
+    for _ in range(5):
+        with pytest.raises(AuthError):
+            auth.authenticate("bob", "wrong-password-1")
+    with pytest.raises(AuthError):
+        auth.reset_password(admin, bob.id, "short")  # password policy applies
+    auth.reset_password(admin, bob.id, "N3wPassw0rd99")
+    assert auth.authenticate("bob", "N3wPassw0rd99").username == "bob"  # unlocked
+    assert auth.principal_from_token(token) is None                       # old API tokens cancelled
+    viewer = auth.authenticate("bob", "N3wPassw0rd99")
+    with pytest.raises(PermissionError):
+        auth.reset_password(viewer, bob.id, "An0therPassw0rd")             # only admins
+    auth.create_user("root2", PW, ["admin"], "t2")
+    other_admin = auth.authenticate("root2", PW)
+    with pytest.raises(PermissionError):
+        auth.reset_password(other_admin, bob.id, "An0therPassw0rd")        # other tenant
+    assert auth.repo.list_audit("t1", action="password_reset")
+
+
+def test_change_own_password(make_settings):
+    auth = AuthService(make_settings(), Repository(f"sqlite:///{make_settings().data_dir}/c.db"))
+    auth.create_user("carol", PW, ["editor"], "t1")
+    me = auth.authenticate("carol", PW)
+    with pytest.raises(AuthError, match="current password"):
+        auth.change_password(me, "not-it", "N3wPassw0rd99")
+    auth.change_password(me, PW, "N3wPassw0rd99")
+    with pytest.raises(AuthError):
+        auth.authenticate("carol", PW)
+    assert auth.authenticate("carol", "N3wPassw0rd99")

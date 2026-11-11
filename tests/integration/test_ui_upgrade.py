@@ -187,3 +187,29 @@ def test_page_headers_explain_purpose(ui2_env):
     text = _text(at)
     assert "page-title" in " ".join(m.value for m in at.markdown) or "Retrieval debugger" in text
     assert "Why you need it" in text and "If something goes wrong" in text
+
+
+def test_change_my_password_and_admin_reset_in_ui(ui2_env):
+    from security.auth import AuthError, AuthService
+    auth = AuthService(ui2_env)
+    user = auth.create_user("pwuser", PW, ["viewer"], "default")
+    at = _page("chat", user="pwuser").run()
+    assert not at.exception
+    form_inputs = [t for t in at.text_input if t.label.startswith(("Current password", "New password", "Repeat"))]
+    assert len(form_inputs) == 3
+    form_inputs[0].set_value(PW)
+    form_inputs[1].set_value("Ch4ngedPassw0rd")
+    form_inputs[2].set_value("Different123x")
+    next(b for b in at.button if b.label == "Change password").click().run()
+    assert any("do not match" in e.value for e in at.error)
+    assert auth.authenticate("pwuser", PW)  # unchanged
+    # admin resets it from Users & roles
+    adm = _page("users").run()
+    assert not adm.exception and "Reset a password / unlock an account" in _text(adm)
+    adm.selectbox(key="reset_user").set_value(user)
+    adm.text_input(key="reset_new").set_value("R3setPassw0rd!")
+    next(b for b in adm.button if b.label == "Reset password").click().run()
+    assert not adm.exception and any("reset and account unlocked" in s.value for s in adm.success)
+    with pytest.raises(AuthError):
+        auth.authenticate("pwuser", PW)
+    assert auth.authenticate("pwuser", "R3setPassw0rd!")

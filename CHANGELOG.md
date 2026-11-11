@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.2.3 — 2026-11-11
+
+### Added
+- **Change my password** (sidebar, every signed-in user) and **Reset a password / unlock an account** (Users & roles,
+  admins; same tenant only, password policy, clears the 5-attempt lockout, cancels API tokens, audited as
+  `password_reset`). Note: `ADMIN_PASSWORD` only creates the first admin; later changes use these screens.
+- docs/USER_MANUAL.html: role-based user manual (Admin / Loader = editor / User = viewer) with a 58-step acceptance
+  test plan and sign-off sheet. docs/COMPLETE_WORKFLOW.html: install → GitHub → Streamlit → Hugging Face → 107 tests.
+
 ## 2.2.2 — 2026-11-11
 
 ### Added

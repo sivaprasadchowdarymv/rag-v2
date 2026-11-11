@@ -538,6 +538,18 @@ def users_page() -> None:
                     st.success("Saved.")
                 except (AuthError, PermissionError) as exc:
                     st.error(getattr(exc, "user_message", str(exc)))
+        with st.form("reset_pw", clear_on_submit=True):
+            st.markdown("**Reset a password / unlock an account**")
+            st.caption("For a user who forgot their password or is locked after 5 wrong attempts. Tell them the new "
+                       "password privately; they can change it under 🔑 Change my password in the sidebar.")
+            u = st.selectbox("User ", users, format_func=lambda x: x.username, key="reset_user")
+            new_pw = st.text_input("New password", type="password", key="reset_new")
+            if st.form_submit_button("Reset password"):
+                try:
+                    auth.reset_password(p, u.id, new_pw)
+                    st.success(f"Password for {u.username} reset and account unlocked.")
+                except (AuthError, PermissionError) as exc:
+                    st.error(getattr(exc, "user_message", str(exc)))
 
 
 # =============================================================================

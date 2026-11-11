@@ -155,6 +155,17 @@ class AuthService:
         self.repo.revoke_tokens(user.id)
         self.repo.audit(user.tenant_id, user.id, "password_changed", user.username)
 
+    def reset_password(self, actor: Principal, user_id: str, new: str) -> None:
+        """Admin: set a new password for a user in the same tenant, unlock it and cancel its API tokens."""
+        require(actor, "manage_users")
+        user = self.repo.get_user(user_id)
+        if user is None or user.tenant_id != actor.tenant_id:
+            raise PermissionError("user not found in your tenant")
+        check_password_policy(new)
+        self.repo.update_user(user_id, password_hash=hash_password(new), failed_logins=0, locked_until=0.0)
+        self.repo.revoke_tokens(user_id)
+        self.repo.audit(actor.tenant_id, actor.user_id, "password_reset", user_id)
+
     def set_roles(self, actor: Principal, user_id: str, roles: Sequence[str], active: Optional[bool] = None) -> None:
         require(actor, "manage_users")
         user = self.repo.get_user(user_id)
