@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.2.2 — 2026-11-11
+
+### Added
+- **Hugging Face Docker Space deployment.** `python launch.py spaces [--push USER/SPACE] [--public] [--no-secrets]`
+  builds `build/hf-space/` (project files only: never `.env`, secrets, data, tests or wheels; Space README with
+  `sdk: docker`, `app_port: 7860`) and, with `--push`, creates a private Docker Space, sends `.env` values as Space
+  secrets (keys, tokens, passwords, `DATABASE_URL`) and variables (the rest, `LLM_MODE=cloud`) and uploads the folder.
+  Only setting names are printed.
+- `Dockerfile.spaces` (UID 1000, `/home/user/app`, port 7860) + `deploy/hf-space/start.sh`: uses a Storage Bucket at
+  `/data` when attached, runs migrations, starts Streamlit with XSRF off (required inside the Spaces iframe for
+  uploads). `deploy/hf-space/db_probe.py`: an unreachable `DATABASE_URL` falls back to SQLite with a warning instead of
+  crash-looping (`DB_FALLBACK_SQLITE=false` to disable).
+- Guide: docs/HF_SPACES_DEPLOY.md. Tests: tests/unit/test_hf_space.py (Hub API mocked).
+- `.gitignore`: `build/`. `Dockerfile`, `docker-compose.yml` and all app code unchanged.
+
 ## 2.2.1 — 2026-11-11
 
 ### Added

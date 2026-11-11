@@ -8,16 +8,10 @@ backups/
 .venv/
 venv/
 .streamlit/secrets.toml
-data/
-__pycache__/
-*.pyc
-.pytest_cache/
-.env
-.ruff_cache/
-backups/
-.venv/
-venv/
-.streamlit/secrets.toml
+# secrets in any form (2.2.1): .env copies made by launch.py, local secrets, logs
 .env.*
 !.env.example
 *.log
+
+# Hugging Face Space folder made by launch.py spaces
+build/

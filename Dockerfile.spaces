@@ -1,0 +1,36 @@
+# RAG∞ Ultimate — image for a Hugging Face Docker Space.
+# Differences from ./Dockerfile (unchanged, used by docker compose):
+#   * runs as UID 1000 (required by Spaces), app in /home/user/app
+#   * Streamlit on port 7860 (the README's app_port) with XSRF off: Spaces show the app inside an
+#     iframe on another domain, where Streamlit's XSRF cookie is blocked and every upload fails with 403.
+#     The app keeps its own login (AUTH_MODE=users) and upload checks.
+#   * data in /data when a Storage Bucket is attached, otherwise in the app folder (temporary;
+#     use DATABASE_URL + HF_DATASET_REPO so accounts and documents survive restarts).
+# `python launch.py spaces` copies this file into the Space as "Dockerfile".
+ARG PYTHON_IMAGE=python:3.12-slim
+
+FROM ${PYTHON_IMAGE} AS builder
+ENV PIP_NO_CACHE_DIR=1 PIP_DISABLE_PIP_VERSION_CHECK=1
+WORKDIR /build
+COPY requirements.lock requirements-optional.txt ./
+RUN pip wheel --wheel-dir /wheels -r requirements.lock \
+ && pip wheel --wheel-dir /wheels -r requirements-optional.txt
+
+FROM ${PYTHON_IMAGE} AS runtime
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1 LOG_FORMAT=json \
+    STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends curl tesseract-ocr tesseract-ocr-eng postgresql-client \
+ && rm -rf /var/lib/apt/lists/* \
+ && useradd -m -u 1000 user
+COPY --from=builder /wheels /wheels
+RUN pip install --no-index --find-links /wheels /wheels/* && rm -rf /wheels
+USER user
+ENV HOME=/home/user PATH=/home/user/.local/bin:$PATH
+WORKDIR $HOME/app
+COPY --chown=user . $HOME/app
+RUN mkdir -p $HOME/app/data && chmod +x deploy/hf-space/start.sh
+EXPOSE 7860
+HEALTHCHECK --interval=30s --timeout=5s --start-period=120s --retries=3 \
+    CMD curl -fsS http://localhost:7860/_stcore/health || exit 1
+CMD ["sh", "deploy/hf-space/start.sh"]

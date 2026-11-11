@@ -23,6 +23,7 @@ python launch.py secrets      # .env → Streamlit Community Cloud secrets
 python launch.py docker up    # Docker: PostgreSQL + app + API (profile cloud)
 ```
 Deploying to Streamlit Community Cloud with every feature, then Docker: [docs/STREAMLIT_CLOUD_DEPLOY.md](docs/STREAMLIT_CLOUD_DEPLOY.md).
+Hugging Face Docker Space (one command: `py launch.py spaces --push you/rag-ultimate`): [docs/HF_SPACES_DEPLOY.md](docs/HF_SPACES_DEPLOY.md).
 
 ## Quick start (local)
 

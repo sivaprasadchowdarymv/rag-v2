@@ -7,6 +7,7 @@ RAG∞ Ultimate — one launcher for the whole project (standard library only).
     python launch.py run [--api]      start the Streamlit app (and the REST API with --api)
     python launch.py secrets          turn .env into Streamlit Community Cloud secrets (TOML) to paste
     python launch.py docker [up|down|logs|status|backup] [--profile cloud]   Docker Compose shortcuts
+    python launch.py spaces [--push USER/SPACE]   build a Hugging Face Docker Space (and upload it + its secrets)
 
 Run every command from the project folder. Windows: `py launch.py …`; macOS/Linux: `python3 launch.py …`.
 Keys are never printed: only "set" / "missing" and how many backup keys exist.
@@ -171,6 +172,100 @@ def strong_password(n: int = 20) -> str:
 def run(cmd: List[str], **kw) -> int:
     say(" ".join(cmd), "step")
     return subprocess.call(cmd, cwd=ROOT, **kw)
+
+
+# ---- Hugging Face Docker Space -------------------------------------------------------------
+SPACE_DIR = ROOT / "build" / "hf-space"          # git-ignored
+# Never copied into the Space: secrets, local data, CI, tests, offline wheels, screenshots.
+SPACE_EXCLUDE_DIRS = {".git", ".github", ".venv", "venv", "data", "backups", "build", "tests", "__pycache__",
+                      ".pytest_cache", ".ruff_cache", ".mypy_cache", "node_modules", "screenshots", "evaluation"}
+SPACE_EXCLUDE_FILES = re.compile(r"^(\.env(\..*)?|secrets\.toml|.*\.(whl|pyc|log|zip|db|sqlite3?|pdf))$")
+# Settings that mean nothing inside a Space (or are set by deploy/hf-space/start.sh).
+SPACE_SKIP = {"DATA_DIR", "PORT", "HOST", "OLLAMA_BASE_URL", "OLLAMA_MODEL", "OLLAMA_FAST_MODEL",
+              "OLLAMA_VISION_MODEL", "POSTGRES_PASSWORD", "MINIO_ROOT_USER", "MINIO_ROOT_PASSWORD",
+              "GRAFANA_ADMIN_PASSWORD", "DOMAIN", "HF_HOME", "FASTEMBED_CACHE_PATH"}
+
+SPACE_README = """---
+title: {title}
+emoji: 📚
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 7860
+pinned: false
+short_description: Verified, cited answers from your documents (RAG)
+---
+
+# {title}
+
+RAG∞ Ultimate running as a Hugging Face **Docker Space** (built from `Dockerfile`, Streamlit on port 7860).
+
+* Settings come from this Space's **Settings → Variables and secrets** (never from files in this repo).
+* Keep accounts and chats: set `DATABASE_URL` to a hosted PostgreSQL (e.g. Neon, `?sslmode=require`).
+* Keep uploaded documents: set `HF_TOKEN` (write) + `HF_DATASET_REPO`, or attach a Storage Bucket (mounted at `/data`).
+
+The full project documentation is in `PROJECT_README.md` and `docs/`.
+"""
+
+
+def space_env(env: Dict[str, str]) -> Tuple[Dict[str, str], Dict[str, str], List[str]]:
+    """Split .env into Space secrets (hidden) and variables (visible) + warnings. Empty values are skipped."""
+    secrets_: Dict[str, str] = {}
+    variables: Dict[str, str] = {}
+    for k, v in env.items():
+        if v == "" or k in SPACE_SKIP:
+            continue
+        (secrets_ if SECRET_NAMES.search(k) else variables)[k] = v
+    warnings: List[str] = []
+    if variables.get("LLM_MODE", "cloud") != "cloud":
+        warnings.append(f"LLM_MODE={variables['LLM_MODE']} changed to cloud for the Space (there is no Ollama there).")
+    variables["LLM_MODE"] = "cloud"
+    if variables.get("AUTH_MODE", "none") != "users":
+        warnings.append("AUTH_MODE is not 'users': anyone who can open the Space can use it (and your API quota). "
+                        "Set AUTH_MODE=users + ADMIN_USERNAME / ADMIN_PASSWORD, or keep the Space private.")
+    db = secrets_.get("DATABASE_URL", "")
+    if not db or db.startswith("sqlite") or "localhost" in db or "127.0.0.1" in db:
+        secrets_.pop("DATABASE_URL", None)
+        warnings.append("No hosted DATABASE_URL: the Space uses SQLite, so accounts and chats are lost when it "
+                        "restarts (unless a Storage Bucket is attached). Use Neon PostgreSQL to keep them.")
+    if not (secrets_.get("HF_TOKEN") and variables.get("HF_DATASET_REPO")):
+        warnings.append("HF_TOKEN / HF_DATASET_REPO not both set: uploaded documents are lost when the Space "
+                        "restarts (unless a Storage Bucket is attached).")
+    if not secrets_.get("GROQ_API_KEY"):
+        warnings.append("GROQ_API_KEY is empty: no written answers.")
+    return secrets_, variables, warnings
+
+
+def space_files(root: Path = ROOT) -> List[Path]:
+    """Project files that go into the Space, relative to root (secrets and local data never included)."""
+    out: List[Path] = []
+    for dirpath, dirnames, filenames in os.walk(root):
+        dirnames[:] = sorted(d for d in dirnames if d not in SPACE_EXCLUDE_DIRS and not d.startswith(".venv"))
+        for name in sorted(filenames):
+            if SPACE_EXCLUDE_FILES.match(name):
+                continue
+            rel = (Path(dirpath) / name).relative_to(root)
+            if rel.parts[0] == ".streamlit" and name != "config.toml":
+                continue  # secrets.toml(.example) stay home
+            out.append(rel)
+    return out
+
+
+def build_space(dest: Path = SPACE_DIR, root: Path = ROOT, title: str = "RAG Ultimate") -> List[Path]:
+    """Write a ready-to-upload Space folder: project files, Dockerfile.spaces as Dockerfile, Space README."""
+    if dest.exists():
+        shutil.rmtree(dest)
+    dest.mkdir(parents=True)
+    files = space_files(root)
+    for rel in files:
+        target = dest / rel
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(root / rel, target)
+    if (dest / "README.md").exists():
+        (dest / "README.md").rename(dest / "PROJECT_README.md")
+    (dest / "README.md").write_text(SPACE_README.format(title=title), encoding="utf-8")
+    shutil.copy2(root / "Dockerfile.spaces", dest / "Dockerfile")
+    return sorted(p.relative_to(dest) for p in dest.rglob("*") if p.is_file())
 
 
 # =============================================================================
@@ -389,6 +484,57 @@ def cmd_docker(args) -> None:
     sys.exit(code)
 
 
+def cmd_spaces(args) -> None:
+    files = build_space(title=args.title)
+    say(f"Space folder ready: {os.path.relpath(SPACE_DIR, ROOT)}  ({len(files)} files; no .env, no data)", "ok")
+    env = parse_env(ENV_FILE.read_text(encoding="utf-8")) if ENV_FILE.exists() else {}
+    secrets_, variables, warnings = space_env(env)
+    for w in warnings:
+        say(w, "warn")
+    if not args.push:
+        say("Upload it with:  python launch.py spaces --push YOUR-HF-USERNAME/rag-ultimate")
+        say("Or by hand: huggingface.co/new-space → Docker → Blank, then Files → Add file → Upload files.")
+        return
+    if not re.match(r"^[\w.-]+/[\w.-]+$", args.push):
+        say("--push needs USER/SPACE-NAME, e.g. --push MVSPC16/rag-ultimate", "bad")
+        sys.exit(1)
+    try:
+        from huggingface_hub import HfApi
+    except ImportError:
+        say("huggingface_hub is missing. Run:  python launch.py setup", "bad")
+        sys.exit(1)
+    token = (args.token or os.environ.get("HF_WRITE_TOKEN") or env.get("HF_TOKEN", "")).strip()
+    if not token:
+        token = getpass.getpass("  Hugging Face token with WRITE access (hf_..., hidden): ").strip()
+    api = HfApi(token=token)
+    try:
+        who = api.whoami()
+    except Exception as exc:
+        say(f"Hugging Face rejected the token ({type(exc).__name__}). Create a WRITE token at "
+            "huggingface.co/settings/tokens", "bad")
+        sys.exit(1)
+    say(f"Signed in to Hugging Face as {who.get('name', '?')}", "ok")
+    repo = args.push
+    try:
+        api.create_repo(repo, repo_type="space", space_sdk="docker", private=not args.public, exist_ok=True)
+        say(f"Space {repo} ready ({'public' if args.public else 'private'})", "ok")
+        if not args.no_secrets:
+            for k, v in secrets_.items():
+                api.add_space_secret(repo, k, v)
+            for k, v in variables.items():
+                api.add_space_variable(repo, k, v)
+            say(f"Settings sent: {len(secrets_)} secrets (hidden: {', '.join(sorted(secrets_)) or 'none'}) and "
+                f"{len(variables)} variables", "ok")
+        say("Uploading files (a few minutes the first time)...", "step")
+        api.upload_folder(repo_id=repo, repo_type="space", folder_path=str(SPACE_DIR),
+                          commit_message="Deploy RAG Ultimate (launch.py spaces)",
+                          delete_patterns=["*.py"])
+    except Exception as exc:  # never print the token or secret values
+        say(f"Upload failed: {type(exc).__name__}: {str(exc).replace(token, '***')[:300]}", "bad")
+        sys.exit(1)
+    say(f"Done. Build log + app: https://huggingface.co/spaces/{repo}  (first build takes ~5-10 min)", "ok")
+
+
 def main(argv: Optional[List[str]] = None) -> None:
     for stream in (sys.stdout, sys.stderr):  # Windows consoles / pipes: never crash on ∞ or arrows
         try:
@@ -415,10 +561,17 @@ def main(argv: Optional[List[str]] = None) -> None:
     p = sub.add_parser("docker", help="Docker Compose shortcuts")
     p.add_argument("action", nargs="?", default="up", choices=["up", "down", "logs", "status", "backup"])
     p.add_argument("--profile", default="cloud", choices=["cloud", "hybrid", "production", "local"])
+    p = sub.add_parser("spaces", help="build (and upload) a Hugging Face Docker Space")
+    p.add_argument("--push", metavar="USER/SPACE", help="create/update this Space and send settings from .env")
+    p.add_argument("--token", help="HF write token (default: HF_WRITE_TOKEN env, HF_TOKEN in .env, or ask)")
+    p.add_argument("--public", action="store_true", help="make a NEW Space public (default private)")
+    p.add_argument("--no-secrets", action="store_true", help="upload files only, do not send .env settings")
+    p.add_argument("--title", default="RAG Ultimate")
     args = ap.parse_args(argv)
-    if args.cmd in ("check", "run"):
+    if args.cmd in ("check", "run") or (args.cmd == "spaces" and args.push):
         reexec_in_venv(argv)
-    {"setup": cmd_setup, "check": cmd_check, "run": cmd_run, "secrets": cmd_secrets, "docker": cmd_docker}[
+    {"setup": cmd_setup, "check": cmd_check, "run": cmd_run, "secrets": cmd_secrets, "docker": cmd_docker,
+     "spaces": cmd_spaces}[
         args.cmd](args)
 
 
