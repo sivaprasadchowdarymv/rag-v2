@@ -1,0 +1,24 @@
+{
+  "name": "rag-ultimate controlled benchmark v1",
+  "description": "Questions over evaluation/corpus.py documents. expected_answer lists strings that a correct answer must contain (case-insensitive); expected_source is file + page (page = page/slide/sheet; DOCX/MD pages are ~3,000-character blocks).",
+  "questions": [
+    {"id": "ds-01", "question": "What is the peak output current?", "expected_answer": ["2.2"], "expected_source": {"file": "LM7805X.pdf", "pages": [2]}, "relevant_context": "Peak output current | | 2.2 | A", "difficulty": "easy"},
+    {"id": "ds-02", "question": "What is the typical quiescent current?", "expected_answer": ["5"], "expected_source": {"file": "LM7805X.pdf", "pages": [2]}, "relevant_context": "Quiescent current | | 5 | 8 mA", "difficulty": "easy"},
+    {"id": "ds-03", "question": "What is the dropout voltage VDO?", "expected_answer": ["2.0"], "expected_source": {"file": "LM7805X.pdf", "pages": [2]}, "relevant_context": "Dropout voltage VDO = 2.0V", "difficulty": "easy"},
+    {"id": "ds-04", "question": "Which equation gives the power dissipation PD?", "expected_answer": ["PD"], "expected_source": {"file": "LM7805X.pdf", "pages": [3]}, "relevant_context": "PD = (VIN - VOUT) x IOUT", "difficulty": "medium"},
+    {"id": "ds-05", "question": "How is the junction temperature TJ calculated?", "expected_answer": ["RthJA"], "expected_source": {"file": "LM7805X.pdf", "pages": [3]}, "relevant_context": "Junction temperature TJ = TA + PD x RthJA", "difficulty": "medium"},
+    {"id": "ds-06", "question": "What is the function of pin 2?", "expected_answer": ["ground"], "expected_source": {"file": "LM7805X.pdf", "pages": [4]}, "relevant_context": "2 | GND | Ground", "difficulty": "easy"},
+    {"id": "ds-07", "question": "What is the absolute maximum input voltage?", "expected_answer": ["35"], "expected_source": {"file": "LM7805X.pdf", "pages": [1]}, "relevant_context": "Input voltage VIN = 35V", "difficulty": "easy"},
+    {"id": "ds-08", "question": "What is the max operating temp?", "expected_answer": ["125"], "expected_source": {"file": "LM7805X.pdf", "pages": [1]}, "relevant_context": "Operating temperature TA = 125°C", "difficulty": "medium"},
+    {"id": "ds-09", "question": "Could you please tell me the min output voltage?", "expected_answer": ["4.8"], "expected_source": {"file": "LM7805X.pdf", "pages": [2]}, "relevant_context": "Output voltage | 4.8 | 5.0 | 5.2", "difficulty": "hard"},
+    {"id": "pm-01", "question": "What supply voltage does the pump controller accept?", "expected_answer": ["24"], "expected_source": {"file": "pump_manual.docx", "pages": [1]}, "relevant_context": "supply voltage of 24 V DC", "difficulty": "easy"},
+    {"id": "pm-02", "question": "How often should the inlet filter be replaced?", "expected_answer": ["500"], "expected_source": {"file": "pump_manual.docx", "pages": [1]}, "relevant_context": "every 500 operating hours", "difficulty": "easy"},
+    {"id": "pm-03", "question": "What does error E04 mean?", "expected_answer": ["dry"], "expected_source": {"file": "pump_manual.docx", "pages": [1]}, "relevant_context": "Error E04 indicates dry running", "difficulty": "medium"},
+    {"id": "pm-04", "question": "What is the standby power?", "expected_answer": ["1.5"], "expected_source": {"file": "pump_manual.docx", "pages": [1]}, "relevant_context": "Standby power | 1.5 | W", "difficulty": "easy"},
+    {"id": "inv-01", "question": "How many Bearing 6204 are in stock?", "expected_answer": ["140"], "expected_source": {"file": "inventory.xlsx", "pages": [1]}, "relevant_context": "Bearing 6204 | 140 | Aisle 3", "difficulty": "easy"},
+    {"id": "inv-02", "question": "Where is the seal kit stored?", "expected_answer": ["aisle 7"], "expected_source": {"file": "inventory.xlsx", "pages": [1]}, "relevant_context": "Seal kit | 22 | Aisle 7", "difficulty": "medium"},
+    {"id": "ig-01", "question": "Which port must be opened for the controller API?", "expected_answer": ["8443"], "expected_source": {"file": "install_guide.md", "pages": [1]}, "relevant_context": "Open TCP port 8443", "difficulty": "easy"},
+    {"id": "ig-02", "question": "What is the minimum supported firmware release?", "expected_answer": ["4.1.2"], "expected_source": {"file": "install_guide.md", "pages": [1]}, "relevant_context": "version 4.1.2 is the minimum supported release", "difficulty": "medium"},
+    {"id": "ig-03", "question": "What is the default gateway timeout?", "expected_answer": ["90"], "expected_source": {"file": "install_guide.md", "pages": [1]}, "relevant_context": "default gateway timeout is 90 seconds", "difficulty": "medium"}
+  ]
+}

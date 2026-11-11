@@ -1,0 +1,179 @@
+# RAG Ultimate 2.2 — deployment profiles (see docs/DEPLOYMENT_GUIDE.md)
+#
+#   PROFILE A  local offline : docker compose --profile local up -d
+#   PROFILE B  hybrid        : docker compose --profile hybrid up -d
+#   PROFILE C  production    : docker compose --profile production up -d   (+ --profile monitoring)
+#   PROFILE D  cloud models  : docker compose --profile cloud up -d        (Groq/OpenRouter + PostgreSQL, no Ollama)
+#
+# Every profile reads .env (copy .env.example). Ports bind to 127.0.0.1 except Caddy (80/443) in production.
+
+x-app: &app
+  build: .
+  image: rag-ultimate:2.2.1
+  env_file: .env
+  restart: unless-stopped
+  volumes:
+    - app_data:/app/data
+  logging:
+    options: { max-size: "10m", max-file: "5" }
+
+services:
+  # ---------------------------------------------------------------- local LLM (A, B)
+  ollama:
+    image: ollama/ollama:0.12.6
+    profiles: ["local", "hybrid"]
+    restart: unless-stopped
+    volumes: [ollama_models:/root/.ollama]
+    ports: ["127.0.0.1:11434:11434"]
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 30s
+      retries: 5
+
+  # ------------------------------------------------------------------- PROFILE A
+  app-local:
+    <<: *app
+    profiles: ["local"]
+    environment:
+      LLM_MODE: local
+      OLLAMA_BASE_URL: http://ollama:11434
+      DATABASE_URL: ""            # SQLite in the data volume
+      STORAGE_BACKEND: local
+    ports: ["127.0.0.1:8501:8501"]
+    depends_on: [ollama]
+
+  # ------------------------------------------------------------------- PROFILE B
+  app-hybrid:
+    <<: *app
+    profiles: ["hybrid"]
+    environment:
+      LLM_MODE: hybrid
+      OLLAMA_BASE_URL: http://ollama:11434
+      DATABASE_URL: postgresql://rag:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/rag
+    ports: ["127.0.0.1:8501:8501"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      ollama: { condition: service_started }
+
+  # ------------------------------------------------------------------- PROFILE D
+  app-cloud:                      # Streamlit UI + PostgreSQL, cloud models only (Groq / OpenRouter / AnyRouter)
+    <<: *app
+    profiles: ["cloud"]
+    environment:
+      LLM_MODE: cloud
+      OLLAMA_BASE_URL: ""
+      DATABASE_URL: postgresql://rag:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/rag
+    ports: ["127.0.0.1:8501:8501"]
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  # ------------------------------------------------------------------- PROFILE C
+  app:
+    <<: *app
+    profiles: ["production"]
+    environment:
+      AUTH_MODE: users
+      DATABASE_URL: postgresql://rag:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/rag
+      STORAGE_BACKEND: s3
+      S3_ENDPOINT: http://minio:9000
+      S3_BUCKET: rag-documents
+      S3_ACCESS_KEY: ${MINIO_ROOT_USER:?set MINIO_ROOT_USER}
+      S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD:?set MINIO_ROOT_PASSWORD}
+    expose: ["8501"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      minio: { condition: service_healthy }
+
+  api:
+    <<: *app
+    profiles: ["hybrid", "production", "cloud"]
+    command: ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers"]
+    environment:
+      AUTH_MODE: users
+      DATABASE_URL: postgresql://rag:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/rag
+    expose: ["8000"]
+    ports: ["127.0.0.1:8000:8000"]
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/healthz"]
+      interval: 30s
+      retries: 3
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  postgres:
+    image: postgres:16-alpine
+    profiles: ["hybrid", "production", "cloud"]
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: rag
+      POSTGRES_USER: rag
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+    volumes: [pg_data:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rag -d rag"]
+      interval: 10s
+      retries: 10
+
+  minio:
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+    profiles: ["production"]
+    command: ["server", "/data", "--console-address", ":9001"]
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?set MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?set MINIO_ROOT_PASSWORD}
+    volumes: [minio_data:/data]
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 15s
+      retries: 10
+
+  caddy:
+    image: caddy:2.10-alpine
+    profiles: ["production"]
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+    ports: ["80:80", "443:443"]
+    volumes:
+      - ./deployment/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+    depends_on: [app, api]
+
+  backup:                         # on demand: docker compose run --rm backup   (any profile with PostgreSQL)
+    <<: *app
+    profiles: ["backup"]
+    restart: "no"
+    depends_on:
+      postgres: { condition: service_healthy }
+    command: ["python", "-m", "scripts.backup", "create", "--dest", "/backups"]
+    environment:
+      DATABASE_URL: postgresql://rag:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/rag
+    volumes:
+      - app_data:/app/data
+      - ./backups:/backups
+
+  # ------------------------------------------------------------- monitoring (optional)
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    profiles: ["monitoring"]
+    volumes: [./deployment/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro]
+    ports: ["127.0.0.1:9090:9090"]
+
+  grafana:
+    image: grafana/grafana:12.1.1
+    profiles: ["monitoring"]
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?set GRAFANA_ADMIN_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./deployment/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./deployment/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports: ["127.0.0.1:3000:3000"]
+
+volumes:
+  app_data:
+  pg_data:
+  minio_data:
+  ollama_models:
+  caddy_data:

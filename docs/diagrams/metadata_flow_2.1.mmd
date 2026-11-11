@@ -1,0 +1,10 @@
+flowchart LR
+  UP[Upload] --> VAL[Validate + parse<br/>unchanged 2.0 pipeline] --> IX[Index<br/>nodes · tables · equations · figures]
+  IX --> PR[metadata_intel.build_profile<br/>title · author · type · size · pages · category<br/>tags · version · part numbers · standards<br/>parameters with SI units · references]
+  PR --> PF[(documents/&lt;hash&gt;/metadata_profile.json<br/>source=auto/file · confidence · pages)]
+  ED[User edits in Documents or PATCH API] --> UF[(metadata_user.json<br/>per tenant / workspace scope)]
+  PF --> EF[Effective view<br/>user value wins]
+  UF --> EF
+  EF --> LIB[Library search · filter · sort]
+  EF --> FIL[Chat / API filters → doc ids]
+  FIL --> RET[Retrieval pre-filter]

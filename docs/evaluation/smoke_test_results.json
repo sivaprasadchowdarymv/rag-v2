@@ -1,0 +1,110 @@
+{
+  "api": "http://127.0.0.1:8011",
+  "ui": "http://127.0.0.1:8599",
+  "passed": 17,
+  "failed": 0,
+  "results": [
+    {
+      "check": "api liveness /healthz",
+      "ok": true,
+      "detail": "ok",
+      "s": 0.01
+    },
+    {
+      "check": "api readiness /readyz",
+      "ok": true,
+      "detail": "providers={'groq': True, 'ollama': True}",
+      "s": 0.05
+    },
+    {
+      "check": "unauthenticated query refused",
+      "ok": true,
+      "detail": "401 (auth required)",
+      "s": 0.0
+    },
+    {
+      "check": "login + API token",
+      "ok": true,
+      "detail": "roles=['admin']",
+      "s": 0.13
+    },
+    {
+      "check": "upload LM7805X.pdf",
+      "ok": true,
+      "detail": "new v1",
+      "s": 1.41
+    },
+    {
+      "check": "upload pump_manual.docx",
+      "ok": true,
+      "detail": "new v1",
+      "s": 0.12
+    },
+    {
+      "check": "upload inventory.xlsx",
+      "ok": true,
+      "detail": "new v1",
+      "s": 0.12
+    },
+    {
+      "check": "upload install_guide.md",
+      "ok": true,
+      "detail": "new v1",
+      "s": 0.04
+    },
+    {
+      "check": "upload PNG (OCR)",
+      "ok": true,
+      "detail": "new v1",
+      "s": 0.48
+    },
+    {
+      "check": "list documents",
+      "ok": true,
+      "detail": "5 documents",
+      "s": 0.05
+    },
+    {
+      "check": "grounded question",
+      "ok": true,
+      "detail": "kind=answer model=groq:openai/gpt-oss-120b verdict=verified",
+      "s": 0.32
+    },
+    {
+      "check": "prompt injection blocked",
+      "ok": true,
+      "detail": "ok",
+      "s": 0.03
+    },
+    {
+      "check": "retrieval debug scores",
+      "ok": true,
+      "detail": "5 hits, variants=['dropout voltage', 'dropout voltage volts']",
+      "s": 0.04
+    },
+    {
+      "check": "prometheus metrics",
+      "ok": true,
+      "detail": "ok",
+      "s": 0.01
+    },
+    {
+      "check": "audit trail",
+      "ok": true,
+      "detail": "9 events",
+      "s": 0.01
+    },
+    {
+      "check": "delete document",
+      "ok": true,
+      "detail": "ok",
+      "s": 0.07
+    },
+    {
+      "check": "ui health",
+      "ok": true,
+      "detail": "ok",
+      "s": 0.02
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+[project]
+name = "rag-ultimate"
+version = "2.2.1"
+requires-python = ">=3.12"
+
+[tool.ruff]
+line-length = 120
+extend-exclude = ["data", "backups"]
+
+[tool.ruff.lint]
+select = ["E9", "F", "B"]
+# B008: FastAPI Depends()/File() defaults by design; B905: zip() lengths are equal by construction;
+# B007/B011/B023: reviewed, no defects (loop variables used synchronously, test-only assert False).
+ignore = ["B008", "B905", "B007", "B011", "B023"]
+
+[tool.bandit]
+exclude_dirs = ["tests", "data", "backups"]
+skips = ["B101"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

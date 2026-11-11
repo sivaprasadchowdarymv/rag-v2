@@ -1,0 +1,70 @@
+name: CI
+on:
+  push: { branches: [main] }
+  pull_request:
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install ruff==0.13.3 bandit==1.8.6
+      - run: ruff check .
+      - name: Static security analysis (fails on medium/high)
+        run: bandit -c pyproject.toml -r . -ll
+
+  test:
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env: { POSTGRES_USER: rag, POSTGRES_PASSWORD: ragtest, POSTGRES_DB: rag_test }
+        ports: ["5432:5432"]
+        options: --health-cmd "pg_isready -U rag" --health-interval 5s --health-retries 20
+    env:
+      TEST_DATABASE_URL: postgresql://rag:ragtest@localhost:5432/rag_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12", cache: pip }
+      - run: sudo apt-get update && sudo apt-get install -y tesseract-ocr postgresql-client
+      - run: pip install -r requirements.lock -r requirements-dev.txt
+      - run: python -m pytest -q --maxfail=5
+      - name: Retrieval benchmark (baseline vs upgraded)
+        run: python -m evaluation.benchmark --out benchmark-report
+      - uses: actions/upload-artifact@v4
+        with: { name: benchmark-report, path: benchmark-report }
+
+  dependency-audit:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install pip-audit==2.9.0
+      - run: pip-audit -r requirements.lock --strict
+
+  image:
+    runs-on: ubuntu-24.04
+    needs: [lint, test]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with: { context: ., load: true, tags: "rag-ultimate:ci" }
+      - name: Smoke test the image
+        run: |
+          docker run -d --name rag -p 8501:8501 rag-ultimate:ci
+          for i in $(seq 1 30); do curl -fsS localhost:8501/_stcore/health && break; sleep 2; done
+          docker run --rm rag-ultimate:ci python -c "import api.main, ingestion.processor, security.policy_engine"
+      - name: Container image scan
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          image-ref: rag-ultimate:ci
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "1"

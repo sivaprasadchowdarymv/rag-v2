@@ -1,0 +1,493 @@
+{
+  "dataset": "rag-ultimate controlled benchmark v1",
+  "k": 5,
+  "questions": 18,
+  "ingestion_s": {
+    "LM7805X.pdf": 80.936,
+    "pump_manual.docx": 0.013,
+    "inventory.xlsx": 0.006,
+    "install_guide.md": 0.001
+  },
+  "configs": {
+    "baseline": {
+      "rows": [
+        {
+          "id": "ds-01",
+          "difficulty": "easy",
+          "retrieval_ms": 39719.8,
+          "precision@k": 0.4,
+          "recall@k": 1.0,
+          "hit@k": 1.0,
+          "mrr": 0.3333333333333333,
+          "ndcg@k": 0.5,
+          "context_relevance": 0.375
+        },
+        {
+          "id": "ds-02",
+          "difficulty": "easy",
+          "retrieval_ms": 2.4,
+          "precision@k": 0.4,
+          "recall@k": 1.0,
+          "hit@k": 1.0,
+          "mrr": 1.0,
+          "ndcg@k": 1.0,
+          "context_relevance": 0.625
+        },
+        {
+          "id": "ds-03",
+          "difficulty": "easy",
+          "retrieval_ms": 1.7,
+          "precision@k": 0.4,
+          "recall@k": 1.0,
+          "hit@k": 1.0,
+          "mrr": 0.5,
+          "ndcg@k": 0.6309297535714575,
+          "context_relevance": 0.125
+        },
+        {
+          "id": "ds-04",
+          "difficulty": "medium",
+          "retrieval_ms": 3.1,
+          "precision@k": 0.6,
+          "recall@k": 1.0,
+          "hit@k": 1.0,
+          "mrr": 1.0,
+          "ndcg@k": 1.0,
+          "context_relevance": 0.375
+        },
+        {
+          "id": "ds-05",
+          "difficulty": "medium",
+          "retrieval_ms": 1.7,
+          "precision@k": 0.4,
+          "recall@k": 1.0,
+          "hit@k": 1.0,
+          "mrr": 1.0,
+          "ndcg@k": 1.0,
+          "context_relevance": 0.25
+        },
+        {
+          "id": "ds-06",
+          "difficulty": "easy",
+          "retrieval_ms": 1.4,
+          "precision@k": 0.8,
+          "recall@k": 1.0,
+          "hit@k": 1.0,
+          "mrr": 0.5,
+          "ndcg@k": 0.6309297535714575,
+          "context_relevance": 0.25
+        },
+        {
+          "id": "ds-07",
+          "difficulty": "easy",
+          "retrieval_ms": 1.4,
+          "precision@k": 0.2,
+          "recall@k": 1.0,
+          "hit@k": 1.0,
+          "mrr": 0.5,
+          "ndcg@k": 0.6309297535714575,
+          "context_relevance": 0.125
+        },
+        {
+          "id": "ds-08",
+          "difficulty": "medium",
+          "retrieval_ms": 1.3,
+          "precision@k": 0.2,
+          "recall@k": 1.0,
+          "hit@k": 1.0,
+          "mrr": 0.5,
+          "ndcg@k": 0.6309297535714575,
+          "context_relevance": 0.125
+        },
+        {
+          "id": "ds-09",
+          "difficulty": "hard",
+          "retrieval_ms": 1.5,
+          "precision@k": 0.2,
+          "recall@k": 1.0,
+          "hit@k": 1.0,
+          "mrr": 0.3333333333333333,
+          "ndcg@k": 0.5,
+          "context_relevance": 0.125
+        },
+        {
+          "id": "pm-01",
+          "difficulty": "easy",
+          "retrieval_ms": 1.3,
+          "precision@k": 0.4,
+          "recall@k": 1.0,
+          "hit@k": 1.0,
+          "mrr": 1.0,
+          "ndcg@k": 1.0,
+          "context_relevance": 0.125
+        },
+        {
+          "id": "pm-02",
+          "difficulty": "easy",
+          "retrieval_ms": 0.8,
+          "precision@k": 0.4,
+          "recall@k": 1.0,
+          "hit@k": 1.0,
+          "mrr": 1.0,
+          "ndcg@k": 1.0,
+          "context_relevance": 0.14285714285714285
+        },
+        {
+          "id": "pm-03",
+          "difficulty": "medium",
+          "retrieval_ms": 0.5,
+          "precision@k": 1.0,
+          "recall@k": 1.0,
+          "hit@k": 1.0,
+          "mrr": 1.0,
+          "ndcg@k": 1.0,
+          "context_relevance": 1.0
+        },
+        {
+          "id": "pm-04",
+          "difficulty": "easy",
+          "retrieval_ms": 1.1,
+          "precision@k": 0.6,
+          "recall@k": 1.0,
+          "hit@k": 1.0,
+          "mrr": 1.0,
+          "ndcg@k": 1.0,
+          "context_relevance": 0.25
+        },
+        {
+          "id": "inv-01",
+          "difficulty": "easy",
+          "retrieval_ms": 0.7,
+          "precision@k": 0.0,
+          "recall@k": 0.0,
+          "hit@k": 0.0,
+          "mrr": 0.0,
+          "ndcg@k": 0.0,
+          "context_relevance": 0.0
+        },
+        {
+          "id": "inv-02",
+          "difficulty": "medium",
+          "retrieval_ms": 0.9,
+          "precision@k": 0.2,
+          "recall@k": 1.0,
+          "hit@k": 1.0,
+          "mrr": 0.25,
+          "ndcg@k": 0.43067655807339306,
+          "context_relevance": 0.0
+        },
+        {
+          "id": "ig-01",
+          "difficulty": "easy",
+          "retrieval_ms": 0.9,
+          "precision@k": 0.4,
+          "recall@k": 1.0,
+          "hit@k": 1.0,
+          "mrr": 0.5,
+          "ndcg@k": 0.6309297535714575,
+          "context_relevance": 0.14285714285714285
+        },
+        {
+          "id": "ig-02",
+          "difficulty": "medium",
+          "retrieval_ms": 1.1,
+          "precision@k": 0.4,
+          "recall@k": 1.0,
+          "hit@k": 1.0,
+          "mrr": 1.0,
+          "ndcg@k": 1.0,
+          "context_relevance": 0.14285714285714285
+        },
+        {
+          "id": "ig-03",
+          "difficulty": "medium",
+          "retrieval_ms": 0.8,
+          "precision@k": 0.4,
+          "recall@k": 1.0,
+          "hit@k": 1.0,
+          "mrr": 1.0,
+          "ndcg@k": 1.0,
+          "context_relevance": 0.14285714285714285
+        }
+      ],
+      "summary": {
+        "precision@k": 0.4111,
+        "recall@k": 0.9444,
+        "hit@k": 0.9444,
+        "mrr": 0.6898,
+        "ndcg@k": 0.7547,
+        "context_relevance": 0.2401,
+        "retrieval_ms_p50": 1.3,
+        "retrieval_ms_p95": 3.1,
+        "recall@k_by_difficulty": {
+          "easy": 0.9,
+          "hard": 1.0,
+          "medium": 1.0
+        }
+      }
+    },
+    "upgraded": {
+      "rows": [
+        {
+          "id": "ds-01",
+          "difficulty": "easy",
+          "retrieval_ms": 2.3,
+          "precision@k": 0.6,
+          "recall@k": 1.0,
+          "hit@k": 1.0,
+          "mrr": 1.0,
+          "ndcg@k": 1.0,
+          "context_relevance": 0.375
+        },
+        {
+          "id": "ds-02",
+          "difficulty": "easy",
+          "retrieval_ms": 2.1,
+          "precision@k": 0.6,
+          "recall@k": 1.0,
+          "hit@k": 1.0,
+          "mrr": 1.0,
+          "ndcg@k": 1.0,
+          "context_relevance": 0.625
+        },
+        {
+          "id": "ds-03",
+          "difficulty": "easy",
+          "retrieval_ms": 1.8,
+          "precision@k": 0.4,
+          "recall@k": 1.0,
+          "hit@k": 1.0,
+          "mrr": 0.5,
+          "ndcg@k": 0.6309297535714575,
+          "context_relevance": 0.125
+        },
+        {
+          "id": "ds-04",
+          "difficulty": "medium",
+          "retrieval_ms": 2.5,
+          "precision@k": 0.6,
+          "recall@k": 1.0,
+          "hit@k": 1.0,
+          "mrr": 1.0,
+          "ndcg@k": 1.0,
+          "context_relevance": 0.375
+        },
+        {
+          "id": "ds-05",
+          "difficulty": "medium",
+          "retrieval_ms": 2.4,
+          "precision@k": 0.4,
+          "recall@k": 1.0,
+          "hit@k": 1.0,
+          "mrr": 1.0,
+          "ndcg@k": 1.0,
+          "context_relevance": 0.25
+        },
+        {
+          "id": "ds-06",
+          "difficulty": "easy",
+          "retrieval_ms": 2.3,
+          "precision@k": 1.0,
+          "recall@k": 1.0,
+          "hit@k": 1.0,
+          "mrr": 1.0,
+          "ndcg@k": 1.0,
+          "context_relevance": 0.25
+        },
+        {
+          "id": "ds-07",
+          "difficulty": "easy",
+          "retrieval_ms": 2.5,
+          "precision@k": 0.2,
+          "recall@k": 1.0,
+          "hit@k": 1.0,
+          "mrr": 0.5,
+          "ndcg@k": 0.6309297535714575,
+          "context_relevance": 0.125
+        },
+        {
+          "id": "ds-08",
+          "difficulty": "medium",
+          "retrieval_ms": 2.2,
+          "precision@k": 0.2,
+          "recall@k": 1.0,
+          "hit@k": 1.0,
+          "mrr": 0.5,
+          "ndcg@k": 0.6309297535714575,
+          "context_relevance": 0.125
+        },
+        {
+          "id": "ds-09",
+          "difficulty": "hard",
+          "retrieval_ms": 2.2,
+          "precision@k": 0.2,
+          "recall@k": 1.0,
+          "hit@k": 1.0,
+          "mrr": 1.0,
+          "ndcg@k": 1.0,
+          "context_relevance": 0.25
+        },
+        {
+          "id": "pm-01",
+          "difficulty": "easy",
+          "retrieval_ms": 2.2,
+          "precision@k": 0.4,
+          "recall@k": 1.0,
+          "hit@k": 1.0,
+          "mrr": 1.0,
+          "ndcg@k": 1.0,
+          "context_relevance": 0.125
+        },
+        {
+          "id": "pm-02",
+          "difficulty": "easy",
+          "retrieval_ms": 1.1,
+          "precision@k": 0.4,
+          "recall@k": 1.0,
+          "hit@k": 1.0,
+          "mrr": 1.0,
+          "ndcg@k": 1.0,
+          "context_relevance": 0.125
+        },
+        {
+          "id": "pm-03",
+          "difficulty": "medium",
+          "retrieval_ms": 0.9,
+          "precision@k": 1.0,
+          "recall@k": 1.0,
+          "hit@k": 1.0,
+          "mrr": 1.0,
+          "ndcg@k": 1.0,
+          "context_relevance": 1.0
+        },
+        {
+          "id": "pm-04",
+          "difficulty": "easy",
+          "retrieval_ms": 1.7,
+          "precision@k": 0.6,
+          "recall@k": 1.0,
+          "hit@k": 1.0,
+          "mrr": 1.0,
+          "ndcg@k": 1.0,
+          "context_relevance": 0.25
+        },
+        {
+          "id": "inv-01",
+          "difficulty": "easy",
+          "retrieval_ms": 0.9,
+          "precision@k": 0.0,
+          "recall@k": 0.0,
+          "hit@k": 0.0,
+          "mrr": 0.0,
+          "ndcg@k": 0.0,
+          "context_relevance": 0.0
+        },
+        {
+          "id": "inv-02",
+          "difficulty": "medium",
+          "retrieval_ms": 1.1,
+          "precision@k": 0.2,
+          "recall@k": 1.0,
+          "hit@k": 1.0,
+          "mrr": 0.5,
+          "ndcg@k": 0.6309297535714575,
+          "context_relevance": 0.0
+        },
+        {
+          "id": "ig-01",
+          "difficulty": "easy",
+          "retrieval_ms": 1.3,
+          "precision@k": 0.2,
+          "recall@k": 1.0,
+          "hit@k": 1.0,
+          "mrr": 0.5,
+          "ndcg@k": 0.6309297535714575,
+          "context_relevance": 0.125
+        },
+        {
+          "id": "ig-02",
+          "difficulty": "medium",
+          "retrieval_ms": 1.8,
+          "precision@k": 0.4,
+          "recall@k": 1.0,
+          "hit@k": 1.0,
+          "mrr": 1.0,
+          "ndcg@k": 1.0,
+          "context_relevance": 0.14285714285714285
+        },
+        {
+          "id": "ig-03",
+          "difficulty": "medium",
+          "retrieval_ms": 1.2,
+          "precision@k": 0.4,
+          "recall@k": 1.0,
+          "hit@k": 1.0,
+          "mrr": 1.0,
+          "ndcg@k": 1.0,
+          "context_relevance": 0.14285714285714285
+        }
+      ],
+      "summary": {
+        "precision@k": 0.4333,
+        "recall@k": 0.9444,
+        "hit@k": 0.9444,
+        "mrr": 0.8056,
+        "ndcg@k": 0.8419,
+        "context_relevance": 0.245,
+        "retrieval_ms_p50": 1.8,
+        "retrieval_ms_p95": 2.5,
+        "recall@k_by_difficulty": {
+          "easy": 0.9,
+          "hard": 1.0,
+          "medium": 1.0
+        }
+      }
+    }
+  },
+  "notes": [
+    "Dense retrieval unavailable (embedding model not loaded): lexical retrieval only."
+  ],
+  "created": "2026-11-10T06:58:58Z",
+  "comparison": {
+    "precision@k": {
+      "baseline": 0.4111,
+      "upgraded": 0.4333,
+      "delta": 0.0222
+    },
+    "recall@k": {
+      "baseline": 0.9444,
+      "upgraded": 0.9444,
+      "delta": 0.0
+    },
+    "hit@k": {
+      "baseline": 0.9444,
+      "upgraded": 0.9444,
+      "delta": 0.0
+    },
+    "mrr": {
+      "baseline": 0.6898,
+      "upgraded": 0.8056,
+      "delta": 0.1158
+    },
+    "ndcg@k": {
+      "baseline": 0.7547,
+      "upgraded": 0.8419,
+      "delta": 0.0872
+    },
+    "context_relevance": {
+      "baseline": 0.2401,
+      "upgraded": 0.245,
+      "delta": 0.0049
+    },
+    "retrieval_ms_p50": {
+      "baseline": 1.3,
+      "upgraded": 1.8,
+      "delta": 0.5
+    },
+    "retrieval_ms_p95": {
+      "baseline": 3.1,
+      "upgraded": 2.5,
+      "delta": -0.6
+    }
+  }
+}

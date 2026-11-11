@@ -1,0 +1,831 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RAG Ultimate Setup Guide</title>
+<style>
+:root{
+  --bg:#f7f6f2;--panel:#ffffff;--ink:#1d1f23;--muted:#5d6470;--line:#e3e0d8;
+  --accent:#1f6f5c;--accent-soft:#e3f1ec;--warn:#9a5b00;--warn-soft:#fdf1dc;
+  --bad:#a12d2d;--bad-soft:#fbe6e6;--code:#f1efe9;--codeink:#22262c;--info:#2b5aa8;--info-soft:#e7eefb;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#15171a;--panel:#1d2024;--ink:#e8e6e1;--muted:#a3a9b3;--line:#30343a;
+  --accent:#5fc3a6;--accent-soft:#1d332d;--warn:#e7b25c;--warn-soft:#3a2f1c;
+  --bad:#f08b8b;--bad-soft:#3b2222;--code:#111316;--codeink:#e4e2dc;--info:#8ab0f0;--info-soft:#1e2a3d;}}
+:root[data-theme="dark"]{
+  --bg:#15171a;--panel:#1d2024;--ink:#e8e6e1;--muted:#a3a9b3;--line:#30343a;
+  --accent:#5fc3a6;--accent-soft:#1d332d;--warn:#e7b25c;--warn-soft:#3a2f1c;
+  --bad:#f08b8b;--bad-soft:#3b2222;--code:#111316;--codeink:#e4e2dc;--info:#8ab0f0;--info-soft:#1e2a3d;}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--accent)}
+.wrap{display:grid;grid-template-columns:260px minmax(0,1fr);max-width:1240px;margin:0 auto}
+nav.toc{position:sticky;top:0;height:100vh;overflow:auto;padding:24px 16px;border-right:1px solid var(--line)}
+nav.toc h2{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+nav.toc a{display:block;padding:5px 8px;border-radius:6px;text-decoration:none;color:var(--ink);font-size:14px}
+nav.toc a:hover{background:var(--accent-soft)}
+nav.toc .sub{padding-left:18px;font-size:13px;color:var(--muted)}
+main{padding:32px 40px 80px;min-width:0}
+header.hero h1{font-size:34px;line-height:1.2;margin:0 0 8px}
+header.hero p{color:var(--muted);margin:0 0 16px;max-width:760px}
+.progress{display:flex;align-items:center;gap:12px;margin:16px 0 8px;font-size:14px;color:var(--muted)}
+.bar{flex:1;max-width:360px;height:8px;background:var(--line);border-radius:99px;overflow:hidden}
+.bar>i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+section{margin:48px 0 0}
+section>h2{font-size:24px;margin:0 0 6px;padding-top:8px;border-top:2px solid var(--line)}
+h3{font-size:18px;margin:28px 0 8px}
+.lead{color:var(--muted);margin:0 0 16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin:14px 0}
+.step{display:grid;grid-template-columns:36px minmax(0,1fr);gap:14px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:12px 0}
+.step .num{width:32px;height:32px;border-radius:50%;background:var(--accent);color:var(--panel);display:grid;place-items:center;font-weight:700;font-size:14px}
+.step h4{margin:2px 0 6px;font-size:16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.step label.done{margin-left:auto;font-size:13px;color:var(--muted);display:flex;gap:6px;align-items:center;cursor:pointer;font-weight:400}
+.step.is-done{opacity:.62}
+.step p{margin:6px 0}
+pre{position:relative;background:var(--code);color:var(--codeink);border:1px solid var(--line);border-radius:8px;padding:12px 14px;overflow:auto;font:13.5px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;margin:8px 0}
+code{font:13.5px ui-monospace,SFMono-Regular,Consolas,monospace;background:var(--code);padding:1px 5px;border-radius:4px}
+pre code{background:none;padding:0}
+.copy{position:absolute;top:6px;right:6px;font-size:12px;border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:6px;padding:2px 8px;cursor:pointer}
+.copy:hover{color:var(--ink)}
+.note,.warn,.bad,.tip{border-radius:8px;padding:10px 14px;margin:10px 0;font-size:15px}
+.note{background:var(--info-soft);border-left:4px solid var(--info)}
+.tip{background:var(--accent-soft);border-left:4px solid var(--accent)}
+.warn{background:var(--warn-soft);border-left:4px solid var(--warn)}
+.bad{background:var(--bad-soft);border-left:4px solid var(--bad)}
+.tabs{margin:8px 0}
+.tabbar{display:flex;gap:4px;flex-wrap:wrap}
+.tabbar button{border:1px solid var(--line);border-bottom:none;background:var(--bg);color:var(--muted);padding:6px 12px;border-radius:8px 8px 0 0;cursor:pointer;font-size:13px}
+.tabbar button[aria-selected="true"]{background:var(--code);color:var(--ink);font-weight:600}
+.tabpanel{display:none}.tabpanel.active{display:block}
+.tabpanel pre{margin-top:0;border-top-left-radius:0}
+table{border-collapse:collapse;width:100%;margin:10px 0;font-size:14.5px;background:var(--panel)}
+th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:var(--code)}
+.tablewrap{overflow-x:auto}
+.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch;margin:12px 0}
+.flow .box{flex:1 1 150px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:14px;position:relative}
+.flow .box b{display:block;color:var(--accent);font-size:13px;text-transform:uppercase;letter-spacing:.05em}
+.flow .arrow{align-self:center;color:var(--muted);font-size:20px}
+.pill{display:inline-block;font-size:12px;border-radius:99px;padding:1px 9px;border:1px solid var(--line);color:var(--muted)}
+.pill.ok{color:var(--accent);border-color:var(--accent)}
+.pill.wb{color:var(--warn);border-color:var(--warn)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+svg text{fill:var(--ink);font:13px system-ui,sans-serif}
+svg .bx{fill:var(--panel);stroke:var(--line);stroke-width:1.5}
+svg .bxa{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.5}
+svg .ln{stroke:var(--muted);stroke-width:1.5;fill:none;marker-end:url(#ah)}
+svg .mut{fill:var(--muted);font-size:11.5px}
+.themebtn{position:fixed;right:16px;top:12px;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:8px;padding:4px 10px;font-size:13px;cursor:pointer;z-index:5}
+@media (max-width: 860px){
+  .wrap{display:block}
+  nav.toc{position:static;height:auto;border-right:none;border-bottom:1px solid var(--line);padding:16px}
+  main{padding:20px 16px 60px}
+  header.hero h1{font-size:26px}
+  .step{grid-template-columns:28px minmax(0,1fr);padding:14px}
+  .step .num{width:26px;height:26px;font-size:12px}
+}
+@media print{nav.toc,.copy,.themebtn,.done{display:none}.wrap{display:block}}
+</style>
+</head>
+<body>
+<button class="themebtn" id="themebtn" type="button">◐ Theme</button>
+<div class="wrap">
+<nav class="toc" aria-label="Contents">
+  <h2>Contents</h2>
+  <a href="#overview">0 · What you are building</a>
+  <a href="#prereq">1 · Install the tools</a>
+  <a href="#first-run">2 · First run on your PC</a>
+  <a href="#use">3 · Use the app</a>
+  <a href="#offline">4 · Go fully offline (Ollama)</a>
+  <a href="#accounts">5 · Turn on user accounts</a>
+  <a href="#cloud">6 · Add cloud models (optional)</a>
+  <a href="#api">7 · Use the REST API</a>
+  <a href="#checks">8 · Run tests &amp; checks</a>
+  <a href="#bench">9 · Measure quality</a>
+  <a href="#github">10 · Put it on GitHub (CI)</a>
+  <a href="#server">11 · Production server (Docker)</a>
+  <a href="#ops">12 · Backups &amp; daily operations</a>
+  <a href="#inside">13 · How it works inside</a>
+  <a class="sub" href="#wf-ingest">Upload workflow</a>
+  <a class="sub" href="#wf-question">Question workflow</a>
+  <a class="sub" href="#wf-route">Model routing</a>
+  <a class="sub" href="#wf-guard">Security layers</a>
+  <a href="#trouble">14 · Troubleshooting</a>
+  <a href="#cheat">15 · Command cheat sheet</a>
+  <a href="#glossary">16 · Glossary</a>
+</nav>
+
+<main>
+<header class="hero">
+  <h1>RAG Ultimate 2.0: step-by-step guide</h1>
+  <p>From "I have a ZIP file" to a running, secure document-question-answering app, first on your own computer,
+  then on a server. Every command is copy-paste ready. Tick each step as you finish it; your progress is
+  remembered in this browser.</p>
+  <div class="progress"><span id="ptext">0 of 0 steps done</span><div class="bar"><i id="pbar"></i></div>
+  <button class="copy" style="position:static" id="reset" type="button">Reset ticks</button></div>
+  <div class="note"><b>Pick your operating system once</b> using any tab like
+  <span class="pill">Windows</span> <span class="pill">macOS</span> <span class="pill">Linux</span>; all other tabs on the page switch with it.</div>
+</header>
+
+<!-- ================================================================== 0 -->
+<section id="overview">
+<h2>0 · What you are building</h2>
+<p class="lead">You upload documents (PDF, Word, PowerPoint, Excel, CSV, text, Markdown, HTML, JSON, images).
+You ask questions in plain English. The app finds the exact passages, asks an AI model to answer
+<b>only from those passages</b>, checks every number against the cited source, and shows you the evidence.</p>
+
+<svg viewBox="0 0 900 230" width="100%" role="img" aria-label="Big picture: browser to app to models and storage">
+  <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor" style="color:var(--muted)"/></marker></defs>
+  <rect class="bx" x="10" y="80" width="140" height="64" rx="10"/><text x="80" y="108" text-anchor="middle">Your browser</text><text class="mut" x="80" y="127" text-anchor="middle">localhost:8501</text>
+  <rect class="bxa" x="200" y="30" width="250" height="165" rx="12"/>
+  <text x="325" y="56" text-anchor="middle" font-weight="700">RAG Ultimate (Python)</text>
+  <text class="mut" x="325" y="80" text-anchor="middle">Streamlit UI  ·  REST API</text>
+  <text class="mut" x="325" y="102" text-anchor="middle">security checks (every request)</text>
+  <text class="mut" x="325" y="124" text-anchor="middle">search: keyword + meaning + rerank</text>
+  <text class="mut" x="325" y="146" text-anchor="middle">agents: answer → verify → quality</text>
+  <text class="mut" x="325" y="168" text-anchor="middle">model router (local / cloud)</text>
+  <rect class="bx" x="520" y="20" width="170" height="56" rx="10"/><text x="605" y="45" text-anchor="middle">Ollama (local AI)</text><text class="mut" x="605" y="63" text-anchor="middle">offline, free</text>
+  <rect class="bx" x="520" y="90" width="170" height="56" rx="10"/><text x="605" y="115" text-anchor="middle">Cloud AI (optional)</text><text class="mut" x="605" y="133" text-anchor="middle">Groq, OpenAI, Claude…</text>
+  <rect class="bx" x="720" y="40" width="170" height="56" rx="10"/><text x="805" y="65" text-anchor="middle">Database</text><text class="mut" x="805" y="83" text-anchor="middle">SQLite or PostgreSQL</text>
+  <rect class="bx" x="720" y="120" width="170" height="56" rx="10"/><text x="805" y="145" text-anchor="middle">data/ folder</text><text class="mut" x="805" y="163" text-anchor="middle">indexes, originals</text>
+  <path class="ln" d="M150 112 H198"/>
+  <path class="ln" d="M450 70 H518"/><path class="ln" d="M450 118 H518"/>
+  <path class="ln" d="M450 150 C600 190 690 120 718 75"/><path class="ln" d="M450 170 C600 200 690 170 718 150"/>
+</svg>
+
+<h3>The journey, in order</h3>
+<div class="flow">
+  <div class="box"><b>Part 1–2</b>Install tools, run it on your PC (30–45 min)</div><div class="arrow">→</div>
+  <div class="box"><b>Part 3–4</b>Use it; switch to fully offline AI</div><div class="arrow">→</div>
+  <div class="box"><b>Part 5–7</b>Accounts, cloud models, API</div><div class="arrow">→</div>
+  <div class="box"><b>Part 8–10</b>Tests, quality numbers, GitHub CI</div><div class="arrow">→</div>
+  <div class="box"><b>Part 11–12</b>Server with HTTPS, backups</div>
+</div>
+<div class="tip"><b>You only need Parts 1–3 to start using it.</b> Everything after that is optional and can be done later, in any order you need.</div>
+</section>
+
+<!-- ================================================================== 1 -->
+<section id="prereq">
+<h2>1 · Install the tools</h2>
+<p class="lead">One-time setup. If a tool is already installed, skip its step.</p>
+
+<div class="step" data-step="p1"><div class="num">1</div><div>
+<h4>Install Python 3.12 (or 3.13) <label class="done"><input type="checkbox"> done</label></h4>
+<div class="tabs" data-os>
+  <div class="tabbar"></div>
+  <div class="tabpanel" data-tab="Windows"><p>Download from <a href="https://www.python.org/downloads/">python.org/downloads</a>, run the installer and <b>tick "Add python.exe to PATH"</b> on the first screen. Then open <b>PowerShell</b> (Start menu → type "PowerShell") and check:</p><pre><code>python --version</code></pre></div>
+  <div class="tabpanel" data-tab="macOS"><p>Install <a href="https://brew.sh">Homebrew</a> if you don't have it, then:</p><pre><code>brew install python@3.12
+python3 --version</code></pre></div>
+  <div class="tabpanel" data-tab="Linux"><pre><code>sudo apt update
+sudo apt install -y python3 python3-venv python3-pip
+python3 --version</code></pre></div>
+</div>
+<p>You should see <code>Python 3.12.x</code> or <code>3.13.x</code>.</p>
+</div></div>
+
+<div class="step" data-step="p2"><div class="num">2</div><div>
+<h4>Install Tesseract (reads text from images and scans) <label class="done"><input type="checkbox"> done</label></h4>
+<div class="tabs" data-os>
+  <div class="tabbar"></div>
+  <div class="tabpanel" data-tab="Windows"><p>Download the installer from <a href="https://github.com/UB-Mannheim/tesseract/wiki">github.com/UB-Mannheim/tesseract/wiki</a> and install it to the default folder <code>C:\Program Files\Tesseract-OCR</code>. Then add it to PATH (PowerShell, one line):</p>
+<pre><code>[Environment]::SetEnvironmentVariable("Path", $env:Path + ";C:\Program Files\Tesseract-OCR", "User")</code></pre>
+<p><b>Close and reopen PowerShell</b>, then check:</p><pre><code>tesseract --version</code></pre></div>
+  <div class="tabpanel" data-tab="macOS"><pre><code>brew install tesseract
+tesseract --version</code></pre></div>
+  <div class="tabpanel" data-tab="Linux"><pre><code>sudo apt install -y tesseract-ocr
+tesseract --version</code></pre></div>
+</div>
+<div class="note">Optional: without Tesseract the app still works; images and scanned pages just won't be readable.</div>
+</div></div>
+
+<div class="step" data-step="p3"><div class="num">3</div><div>
+<h4>Install Git (needed later for GitHub) <label class="done"><input type="checkbox"> done</label></h4>
+<div class="tabs" data-os>
+  <div class="tabbar"></div>
+  <div class="tabpanel" data-tab="Windows"><p>Download from <a href="https://git-scm.com/download/win">git-scm.com/download/win</a>, accept the defaults.</p><pre><code>git --version</code></pre></div>
+  <div class="tabpanel" data-tab="macOS"><pre><code>brew install git
+git --version</code></pre></div>
+  <div class="tabpanel" data-tab="Linux"><pre><code>sudo apt install -y git
+git --version</code></pre></div>
+</div>
+</div></div>
+
+<div class="step" data-step="p4"><div class="num">4</div><div>
+<h4>Choose an AI model source (you need at least one) <label class="done"><input type="checkbox"> done</label></h4>
+<div class="grid2">
+<div class="card"><b>Option A: Ollama (local, private, free)</b><br>Runs the AI on your own computer. Needs about 8 GB RAM for an 8B model. Covered in <a href="#offline">Part 4</a>.</div>
+<div class="card"><b>Option B: Groq (cloud, free key)</b><br>Fastest way to try it. Create a free key at <a href="https://console.groq.com/keys">console.groq.com/keys</a> and keep it ready (starts with <code>gsk_</code>).</div>
+</div>
+<div class="warn">With Option B your <b>non-confidential</b> document excerpts are sent to Groq. Documents you mark confidential (or that contain personal data) are never sent to a cloud model by default.</div>
+</div></div>
+</section>
+
+<!-- ================================================================== 2 -->
+<section id="first-run">
+<h2>2 · First run on your PC</h2>
+<p class="lead">About 15 minutes, most of it waiting for downloads.</p>
+
+<div class="step" data-step="f1"><div class="num">1</div><div>
+<h4>Unzip the project <label class="done"><input type="checkbox"> done</label></h4>
+<p>Unzip <code>rag-ultimate-2.0.0.zip</code> into a simple folder, for example <code>C:\projects</code> (Windows) or <code>~/projects</code>. You get a folder named <code>rag-ultimate-main</code>. Open a terminal <b>in that folder</b>:</p>
+<div class="tabs" data-os>
+  <div class="tabbar"></div>
+  <div class="tabpanel" data-tab="Windows"><pre><code>cd C:\projects\rag-ultimate-main</code></pre></div>
+  <div class="tabpanel" data-tab="macOS"><pre><code>cd ~/projects/rag-ultimate-main</code></pre></div>
+  <div class="tabpanel" data-tab="Linux"><pre><code>cd ~/projects/rag-ultimate-main</code></pre></div>
+</div>
+<p>Check you are in the right place: listing the folder (<code>dir</code> on Windows, <code>ls</code> elsewhere) shows <code>app.py</code> and <code>requirements.lock</code>.</p>
+</div></div>
+
+<div class="step" data-step="f2"><div class="num">2</div><div>
+<h4>Create a private Python environment ("venv") <label class="done"><input type="checkbox"> done</label></h4>
+<p>This keeps the project's libraries separate from the rest of your computer.</p>
+<div class="tabs" data-os>
+  <div class="tabbar"></div>
+  <div class="tabpanel" data-tab="Windows"><pre><code>python -m venv .venv
+.venv\Scripts\Activate.ps1</code></pre>
+<p>If PowerShell says <i>"running scripts is disabled"</i>, run this once, then the activate line again:</p>
+<pre><code>Set-ExecutionPolicy -Scope CurrentUser RemoteSigned</code></pre></div>
+  <div class="tabpanel" data-tab="macOS"><pre><code>python3 -m venv .venv
+source .venv/bin/activate</code></pre></div>
+  <div class="tabpanel" data-tab="Linux"><pre><code>python3 -m venv .venv
+source .venv/bin/activate</code></pre></div>
+</div>
+<p>Your prompt now starts with <code>(.venv)</code>. <b>Every time you open a new terminal for this project, run the activate line again.</b></p>
+</div></div>
+
+<div class="step" data-step="f3"><div class="num">3</div><div>
+<h4>Install the libraries <label class="done"><input type="checkbox"> done</label></h4>
+<pre><code>python -m pip install --upgrade pip
+pip install -r requirements.lock</code></pre>
+<p>Takes 3–10 minutes. <code>requirements.lock</code> holds exact, security-audited versions. Success ends with <i>"Successfully installed …"</i>.</p>
+</div></div>
+
+<div class="step" data-step="f4"><div class="num">4</div><div>
+<h4>Create your settings file <code>.env</code> <label class="done"><input type="checkbox"> done</label></h4>
+<div class="tabs" data-os>
+  <div class="tabbar"></div>
+  <div class="tabpanel" data-tab="Windows"><pre><code>copy .env.example .env
+notepad .env</code></pre></div>
+  <div class="tabpanel" data-tab="macOS"><pre><code>cp .env.example .env
+open -e .env</code></pre></div>
+  <div class="tabpanel" data-tab="Linux"><pre><code>cp .env.example .env
+nano .env</code></pre></div>
+</div>
+<p>For the quickest first run, find the line <code>GROQ_API_KEY=</code> and paste your key after the <code>=</code> (no spaces, no quotes):</p>
+<pre><code>GROQ_API_KEY=gsk_your_key_here</code></pre>
+<p>Using Ollama instead? Leave it empty and do <a href="#offline">Part 4</a> first. Save and close the file.</p>
+<div class="bad"><b>Never share or upload <code>.env</code></b>: it holds your keys. It is already excluded from Git.</div>
+</div></div>
+
+<div class="step" data-step="f5"><div class="num">5</div><div>
+<h4>Start the app <label class="done"><input type="checkbox"> done</label></h4>
+<pre><code>streamlit run app.py</code></pre>
+<p>Your browser opens <a href="http://localhost:8501">http://localhost:8501</a>. If it doesn't, open that address yourself. Keep the terminal window open while you use the app; press <code>Ctrl + C</code> in it to stop.</p>
+<div class="note">The first upload downloads two small local models (~150 MB, once) for meaning-based search. If you are offline, the app still works with keyword search and fills the gap automatically later.</div>
+</div></div>
+
+<div class="step" data-step="f6"><div class="num">6</div><div>
+<h4>Check that it works <label class="done"><input type="checkbox"> done</label></h4>
+<ol>
+<li>In the sidebar under <b>Status</b>, your model provider (Groq or Ollama) shows a green dot.</li>
+<li>Drop any PDF on the upload box, wait for "is ready".</li>
+<li>Ask: <i>"Summarize this document"</i>. You get an answer with <code>[REF-1: TEXT p2]</code>-style citations and a <b>✓ Verified</b> badge.</li>
+</ol>
+<div class="tip">🎉 You now have a working RAG app. The rest of this guide is about using it well and running it for others.</div>
+</div></div>
+</section>
+
+<!-- ================================================================== 3 -->
+<section id="use">
+<h2>3 · Use the app</h2>
+<p class="lead">The left menu has three groups. Here is what each page is for.</p>
+<div class="tablewrap"><table>
+<tr><th>Page</th><th>What you do there</th></tr>
+<tr><td><b>Chat</b></td><td>Ask questions. Open <b>Evidence</b> under an answer to see the exact passages; <b>Agent activity</b> shows the steps; <b>Why this model</b> explains which AI answered. Copy, regenerate, 👍/👎 feedback.</td></tr>
+<tr><td><b>Documents</b></td><td>Upload files, choose a <b>sensitivity</b> (public / internal / confidential / restricted), switch documents on/off for chat, see versions, change who can read a document, delete.</td></tr>
+<tr><td><b>Validate</b></td><td>Auto-generate test questions from a document and check the answers.</td></tr>
+<tr><td><b>Dashboard</b></td><td>Counts, latency, cost today, blocked requests, model health.</td></tr>
+<tr><td><b>Ingestion</b></td><td>Queue many/large files in the background; see failed files and why.</td></tr>
+<tr><td><b>Retrieval debugger</b></td><td>When an answer misses: type the question, see every candidate passage with its keyword, meaning, fusion and rerank scores.</td></tr>
+<tr><td><b>Agent traces</b></td><td>For each answer: which agents ran, how long each took, routing and security decisions.</td></tr>
+<tr><td><b>Evaluation</b></td><td>Run the built-in benchmark and download reports (<a href="#bench">Part 9</a>).</td></tr>
+<tr><td><b>Analytics, Settings</b></td><td>Quality trends; answer style and advanced options.</td></tr>
+<tr><td><b>Models, Security, Users &amp; roles, Audit log</b></td><td>Admin only: providers and routing, guardrail policy, accounts, who-did-what log.</td></tr>
+<tr><td><b>⚡ Cache &amp; help</b> <i>(new in 2.1)</i></td><td>Admin only: how many questions were answered instantly from the verified-answer cache, what that saved, why some answers were not cached, <b>Clear cache</b>; add your own questions to the ❔ Help assistant; metadata overview.</td></tr>
+</table></div>
+<h3>New in 2.1</h3>
+<ul>
+<li><b>❔ Help</b> (top right of every page): type a question about using the app, e.g. <i>how do I upload a file?</i> — instant answers, no AI model, nothing stored. The same assistant is in <b>Guide &amp; Test Lab → ⑤ Help center</b>.</li>
+<li><b>Get started checklist</b> at the top of Chat: four steps that tick themselves off as you do them.</li>
+<li><b>⚡ From cache</b>: ask the same question again (even in other words) about the same documents and you get the earlier <i>verified</i> answer instantly and for free. It is never shared with other users or organisations, and a new document version clears it.</li>
+<li><b>📋 How this answer was produced</b>: documents searched, evidence found, method, model, cache and verification at a glance.</li>
+<li><b>🏷️ Metadata</b> on every document card: title, category, tags, part numbers and technical values (e.g. <code>VOUT = 5.0 V</code>) found automatically, each with a confidence and the page it came from. Editors can correct them; search the library and use <b>🎚️ Filters</b> in Chat to search only matching documents.</li>
+</ul>
+<h3>Sidebar controls</h3>
+<ul>
+<li><b>Model mode</b>: <code>local</code> = only your Ollama, <code>cloud</code> = only cloud, <code>hybrid</code> = both.</li>
+<li><b>Model</b>: "Automatic (router)" or pick one exact model.</li>
+</ul>
+<h3>Messages you might see</h3>
+<div class="tablewrap"><table>
+<tr><th>Message</th><th>Meaning</th></tr>
+<tr><td>"…attempt to override the assistant's instructions…"</td><td>The question looked like a prompt-injection attack, so it was blocked.</td></tr>
+<tr><td>"I could not find enough reliable evidence…"</td><td>The draft answer wasn't supported by your documents, so it was withheld instead of guessing.</td></tr>
+<tr><td>"NOT FOUND IN DOCUMENT"</td><td>Your documents don't contain the answer.</td></tr>
+<tr><td>"Personal data in your question was redacted"</td><td>E-mails, ID numbers etc. are removed before any AI sees them.</td></tr>
+<tr><td>"⏳ Too many questions right now"</td><td>Rate limit; wait the seconds shown.</td></tr>
+</table></div>
+</section>
+
+<!-- ================================================================== 4 -->
+<section id="offline">
+<h2>4 · Go fully offline with Ollama</h2>
+<p class="lead">Nothing leaves your computer: local AI, local search models, local database.</p>
+
+<div class="step" data-step="o1"><div class="num">1</div><div>
+<h4>Install Ollama and download a model <label class="done"><input type="checkbox"> done</label></h4>
+<p>Install from <a href="https://ollama.com/download">ollama.com/download</a>. Then, in a terminal:</p>
+<pre><code>ollama pull llama3.1:8b
+ollama pull nomic-embed-text
+ollama list</code></pre>
+<p><code>llama3.1:8b</code> (~4.7 GB) writes the answers; <code>nomic-embed-text</code> is optional, for local meaning-based search through Ollama. Low on RAM? Use <code>qwen2.5:3b</code> instead and put that name in <code>OLLAMA_MODEL</code>.</p>
+</div></div>
+
+<div class="step" data-step="o2"><div class="num">2</div><div>
+<h4>Point the app at Ollama <label class="done"><input type="checkbox"> done</label></h4>
+<p>Edit <code>.env</code> and set:</p>
+<pre><code>LLM_MODE=local
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=llama3.1:8b
+EMBED_BACKEND=local</code></pre>
+<p>Restart the app (<code>Ctrl + C</code>, then <code>streamlit run app.py</code>). The sidebar shows <b>Ollama (local)</b> with a green dot.</p>
+</div></div>
+
+<div class="step" data-step="o3"><div class="num">3</div><div>
+<h4>Make it work with the network unplugged <label class="done"><input type="checkbox"> done</label></h4>
+<p>While still online, upload one document once so the small search models download into <code>data/models</code>. After that you can disconnect. For machines that must never go online, copy the <code>data/models</code> folder from a machine that has them and set <code>MODEL_DOWNLOAD=false</code>.</p>
+</div></div>
+</section>
+
+<!-- ================================================================== 5 -->
+<section id="accounts">
+<h2>5 · Turn on user accounts</h2>
+<p class="lead">Do this before anyone else uses your app. Without accounts, anyone who can reach the address can use it.</p>
+
+<div class="step" data-step="a1"><div class="num">1</div><div>
+<h4>Enable accounts and set the first admin <label class="done"><input type="checkbox"> done</label></h4>
+<p>In <code>.env</code>:</p>
+<pre><code>AUTH_MODE=users
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=ChooseAStrongPass123</code></pre>
+<p>Password rules: at least 10 characters with letters and digits. Username: lowercase letters, digits, <code>. _ @ -</code>. Restart the app; it now shows a sign-in screen. The admin is created automatically on first start.</p>
+</div></div>
+
+<div class="step" data-step="a2"><div class="num">2</div><div>
+<h4>Create users <label class="done"><input type="checkbox"> done</label></h4>
+<p>Sign in as admin → <b>Users &amp; roles</b> → <i>Create user</i>.</p>
+<div class="tablewrap"><table>
+<tr><th>Role</th><th>Can</th></tr>
+<tr><td>viewer</td><td>Ask questions about documents they are allowed to read</td></tr>
+<tr><td>editor</td><td>+ upload, relabel and delete their own documents, run evaluations</td></tr>
+<tr><td>admin</td><td>Everything: users, policies, models, all documents, audit log</td></tr>
+</table></div>
+<p>Five wrong passwords lock an account for 15 minutes. Disabling a user also revokes their API tokens.</p>
+</div></div>
+
+<div class="step" data-step="a3"><div class="num">3</div><div>
+<h4>Set the guardrail policy <label class="done"><input type="checkbox"> done</label></h4>
+<p>Admin → <b>Security</b>. Defaults are safe; typical changes:</p>
+<ul>
+<li><b>Allowed topics</b>: limit the assistant to your domain, e.g. <code>pump|valve</code> and <code>maintenance</code> on separate lines.</li>
+<li><b>Restricted topics</b>: e.g. <code>salary|compensation</code>.</li>
+<li><b>Usage limits</b>: questions per minute and daily AI budget.</li>
+</ul>
+<p>Use <b>Test a prompt</b> to see what would be blocked. Every block is recorded in the <b>Audit log</b>.</p>
+</div></div>
+</section>
+
+<!-- ================================================================== 6 -->
+<section id="cloud">
+<h2>6 · Add cloud models (optional)</h2>
+<p class="lead">Add any of these keys to <code>.env</code> and restart. The router automatically uses what is configured and falls back to the next model if one fails.</p>
+<pre><code>GROQ_API_KEY=gsk_...            # free tier, fast text answers
+OPENAI_API_KEY=sk-...
+ANTHROPIC_API_KEY=sk-ant-...
+OPENROUTER_API_KEY=sk-or-...     # used for reading figures / images
+BEDROCK_REGION=us-east-1         # AWS; also: pip install -r requirements-optional.txt
+LLM_MODE=hybrid                  # allow local AND cloud</code></pre>
+
+<div class="card"><b>The confidentiality rule (important)</b>
+<p>Documents labelled <b>confidential/restricted</b>, or found to contain personal data, are answered by <b>local models only</b>. If no local model is configured, the app refuses rather than sending them to the cloud. Allow cloud for them only if your organisation agrees:</p>
+<pre><code>ALLOW_SENSITIVE_CLOUD=true
+CLOUD_PROVIDERS_ALLOWED=anthropic</code></pre></div>
+
+<p><b>Cost/speed choice</b> (<code>ROUTING_STRATEGY</code>): <code>priority</code> (your order, default), <code>cost</code>, <code>latency</code>, or <code>auto</code> (cheap/fast models for simple lookups, best model for calculations). Admins can see the live routing chain and why each model is excluded on the <b>Models</b> page.</p>
+</section>
+
+<!-- ================================================================== 7 -->
+<section id="api">
+<h2>7 · Use the REST API (optional)</h2>
+<p class="lead">For connecting other programs. It applies the same security checks as the UI.</p>
+<div class="step" data-step="i1"><div class="num">1</div><div>
+<h4>Start the API (second terminal, venv activated) <label class="done"><input type="checkbox"> done</label></h4>
+<pre><code>uvicorn api.main:app --host 127.0.0.1 --port 8000</code></pre>
+<p>Open <a href="http://127.0.0.1:8000/docs">http://127.0.0.1:8000/docs</a> for an interactive page where you can try every endpoint.</p>
+</div></div>
+<div class="step" data-step="i2"><div class="num">2</div><div>
+<h4>Get a token and ask a question (with accounts on) <label class="done"><input type="checkbox"> done</label></h4>
+<div class="tabs" data-os>
+  <div class="tabbar"></div>
+  <div class="tabpanel" data-tab="Windows"><pre><code>$t = (Invoke-RestMethod -Method Post http://127.0.0.1:8000/v1/auth/token -ContentType "application/json" -Body '{"username":"admin","password":"ChooseAStrongPass123"}').token
+Invoke-RestMethod -Method Post http://127.0.0.1:8000/v1/query -Headers @{Authorization="Bearer $t"} -ContentType "application/json" -Body '{"question":"What is the dropout voltage?"}'</code></pre></div>
+  <div class="tabpanel" data-tab="macOS"><pre><code>T=$(curl -s -X POST localhost:8000/v1/auth/token -H 'Content-Type: application/json' \
+  -d '{"username":"admin","password":"ChooseAStrongPass123"}' | python3 -c 'import sys,json;print(json.load(sys.stdin)["token"])')
+curl -s -X POST localhost:8000/v1/query -H "Authorization: Bearer $T" -H 'Content-Type: application/json' \
+  -d '{"question":"What is the dropout voltage?"}'</code></pre></div>
+  <div class="tabpanel" data-tab="Linux"><pre><code>T=$(curl -s -X POST localhost:8000/v1/auth/token -H 'Content-Type: application/json' \
+  -d '{"username":"admin","password":"ChooseAStrongPass123"}' | python3 -c 'import sys,json;print(json.load(sys.stdin)["token"])')
+curl -s -X POST localhost:8000/v1/query -H "Authorization: Bearer $T" -H 'Content-Type: application/json' \
+  -d '{"question":"What is the dropout voltage?"}'</code></pre></div>
+</div>
+<p>Main endpoints: <code>POST /v1/documents</code> (upload), <code>GET /v1/documents</code>, <code>POST /v1/query</code>, <code>POST /v1/retrieval/debug</code>, <code>GET /v1/audit</code>, <code>/healthz</code>, <code>/readyz</code>, <code>/metrics</code>.</p>
+</div></div>
+</section>
+
+<!-- ================================================================== 8 -->
+<section id="checks">
+<h2>8 · Run the tests and checks</h2>
+<p class="lead">Proves your copy works on your machine. The tests run offline with fake AI servers, so they cost nothing.</p>
+<div class="step" data-step="c1"><div class="num">1</div><div>
+<h4>Install the developer tools <label class="done"><input type="checkbox"> done</label></h4>
+<pre><code>pip install -r requirements-dev.txt</code></pre>
+</div></div>
+<div class="step" data-step="c2"><div class="num">2</div><div>
+<h4>Run everything <label class="done"><input type="checkbox"> done</label></h4>
+<pre><code>python -m pytest
+ruff check .
+bandit -c pyproject.toml -r . -ll
+pip-audit -r requirements.lock</code></pre>
+<div class="tablewrap"><table>
+<tr><th>Command</th><th>Good result</th></tr>
+<tr><td><code>pytest</code></td><td><code>264 passed, 4 skipped</code> (the 4 PostgreSQL tests skip unless you set <code>TEST_DATABASE_URL</code>; with it: 268 passed)</td></tr>
+<tr><td><code>ruff</code></td><td><code>All checks passed!</code></td></tr>
+<tr><td><code>bandit</code></td><td>no High or Medium issues</td></tr>
+<tr><td><code>pip-audit</code></td><td><code>No known vulnerabilities found</code></td></tr>
+</table></div>
+<div class="note">On Windows a few tests may be skipped if Tesseract isn't on PATH. That's fine.</div>
+</div></div>
+</section>
+
+<!-- ================================================================== 9 -->
+<section id="bench">
+<h2>9 · Measure answer quality with your real models</h2>
+<p class="lead">This step was not possible in the build environment, so do it once your models work. Keep the report as your quality baseline.</p>
+<div class="step" data-step="b1"><div class="num">1</div><div>
+<h4>Retrieval benchmark (no AI cost) <label class="done"><input type="checkbox"> done</label></h4>
+<pre><code>python -m evaluation.benchmark</code></pre>
+<p>Compares the old (1.x) search against the upgraded one on 18 known questions and prints precision, recall, MRR and NDCG. Reports are saved in <code>data/evaluations/</code>. Higher is better.</p>
+</div></div>
+<div class="step" data-step="b2"><div class="num">2</div><div>
+<h4>Full benchmark including answers (uses your AI) <label class="done"><input type="checkbox"> done</label></h4>
+<pre><code>python -m evaluation.benchmark --generation</code></pre>
+<p>Adds answer correctness, faithfulness, citation correctness and hallucination rate. You can also run both from the <b>Evaluation</b> page and download Markdown/JSON/CSV reports.</p>
+</div></div>
+</section>
+
+<!-- ================================================================== 10 -->
+<section id="github">
+<h2>10 · Put it on GitHub (and get automatic checks)</h2>
+<p class="lead">The project already contains a Git history (one commit per phase) and a CI workflow that tests, scans and builds the Docker image on every push.</p>
+<div class="step" data-step="g1"><div class="num">1</div><div>
+<h4>Create an empty repository <label class="done"><input type="checkbox"> done</label></h4>
+<p>On <a href="https://github.com/new">github.com/new</a>: name it e.g. <code>rag-ultimate</code>, choose <b>Private</b>, and do <b>not</b> add a README.</p>
+</div></div>
+<div class="step" data-step="g2"><div class="num">2</div><div>
+<h4>Push the project <label class="done"><input type="checkbox"> done</label></h4>
+<pre><code>git branch -M main
+git remote add origin https://github.com/YOUR-NAME/rag-ultimate.git
+git push -u origin main</code></pre>
+<p>Git asks you to sign in (browser window or a personal access token).</p>
+</div></div>
+<div class="step" data-step="g3"><div class="num">3</div><div>
+<h4>Watch CI <label class="done"><input type="checkbox"> done</label></h4>
+<p>On GitHub → <b>Actions</b>. Jobs: <i>lint</i>, <i>test</i> (with a real PostgreSQL), <i>dependency-audit</i>, <i>image</i> (Docker build + smoke test + Trivy scan). All green = ready to deploy. A red job: click it to see the failing step. The <i>image</i> job is the first real Docker build of this project, so check it carefully.</p>
+<p>To publish an image: <code>git tag v2.0.0 &amp;&amp; git push origin v2.0.0</code> → pushed to GitHub Container Registry.</p>
+</div></div>
+</section>
+
+<!-- ================================================================== 11 -->
+<section id="server">
+<h2>11 · Production server with Docker (HTTPS, PostgreSQL, accounts)</h2>
+<p class="lead">For a team: a Linux server (Ubuntu 24.04, 4 vCPU, 16 GB RAM if running Ollama there; 2 vCPU / 4 GB with cloud models only) and a domain name.</p>
+
+<div class="step" data-step="s1"><div class="num">1</div><div>
+<h4>Install Docker on the server <label class="done"><input type="checkbox"> done</label></h4>
+<pre><code>curl -fsSL https://get.docker.com | sudo sh
+sudo usermod -aG docker $USER     # then log out and back in
+docker compose version</code></pre>
+</div></div>
+<div class="step" data-step="s2"><div class="num">2</div><div>
+<h4>Get the code onto the server <label class="done"><input type="checkbox"> done</label></h4>
+<pre><code>git clone https://github.com/YOUR-NAME/rag-ultimate.git
+cd rag-ultimate
+cp .env.example .env
+nano .env</code></pre>
+</div></div>
+<div class="step" data-step="s3"><div class="num">3</div><div>
+<h4>Fill in the production settings <label class="done"><input type="checkbox"> done</label></h4>
+<pre><code>AUTH_MODE=users
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=&lt;strong password&gt;
+POSTGRES_PASSWORD=&lt;long random&gt;
+MINIO_ROOT_USER=ragstorage
+MINIO_ROOT_PASSWORD=&lt;long random, 8+ chars&gt;
+GRAFANA_ADMIN_PASSWORD=&lt;strong password&gt;
+DOMAIN=rag.yourcompany.com
+LOG_FORMAT=json
+GROQ_API_KEY=...                 # and/or other providers, or OLLAMA_BASE_URL</code></pre>
+<p>Generate random passwords with <code>openssl rand -base64 24</code>.</p>
+</div></div>
+<div class="step" data-step="s4"><div class="num">4</div><div>
+<h4>Point your domain at the server <label class="done"><input type="checkbox"> done</label></h4>
+<p>At your domain provider, create an <b>A record</b>: <code>rag.yourcompany.com → your server's public IP</code>. Open ports 80 and 443 in the server firewall. Caddy obtains the HTTPS certificate automatically.</p>
+</div></div>
+<div class="step" data-step="s5"><div class="num">5</div><div>
+<h4>Start everything <label class="done"><input type="checkbox"> done</label></h4>
+<pre><code>docker compose --profile production up -d --build
+docker compose --profile production ps</code></pre>
+<p>All services should show <i>running</i> / <i>healthy</i> after a minute or two. Open <code>https://rag.yourcompany.com</code> and sign in.</p>
+<div class="tablewrap"><table>
+<tr><th>Profile</th><th>Starts</th><th>Use for</th></tr>
+<tr><td><code>local</code></td><td>Ollama + app (SQLite)</td><td>one offline machine</td></tr>
+<tr><td><code>hybrid</code></td><td>Ollama + PostgreSQL + app + API</td><td>office server, local + cloud AI</td></tr>
+<tr><td><code>production</code></td><td>app, API, PostgreSQL, MinIO, Caddy HTTPS, backup job</td><td>team / internet</td></tr>
+<tr><td><code>monitoring</code></td><td>Prometheus + Grafana (add to any profile)</td><td>dashboards, alerts</td></tr>
+</table></div>
+</div></div>
+<div class="step" data-step="s6"><div class="num">6</div><div>
+<h4>Run the smoke test against your server <label class="done"><input type="checkbox"> done</label></h4>
+<p>From the server (the API is reachable on localhost:8000 there):</p>
+<pre><code>docker compose --profile production exec api \
+  python -m scripts.smoke_test --api http://127.0.0.1:8000 --user admin --password '&lt;admin password&gt;'</code></pre>
+<p>Expect <code>16 passed, 0 failed</code> (17 when you also pass <code>--ui http://app:8501</code>). Any <b>FAIL</b> line names the part to fix.</p>
+</div></div>
+<div class="step" data-step="s7"><div class="num">7</div><div>
+<h4>Optional: monitoring dashboards <label class="done"><input type="checkbox"> done</label></h4>
+<pre><code>docker compose --profile production --profile monitoring up -d</code></pre>
+<p>Grafana runs on the server at <code>localhost:3000</code>. Open it from your PC through an SSH tunnel: <code>ssh -L 3000:localhost:3000 you@server</code>, then <a href="http://localhost:3000">http://localhost:3000</a>. Sign in with admin and your Grafana password; the <i>RAG Ultimate</i> dashboard is pre-installed.</p>
+</div></div>
+<div class="warn">If <code>docker compose up</code> fails with <i>"manifest unknown"</i> for an image, that exact version tag was removed upstream. Edit the <code>image:</code> line in <code>docker-compose.yml</code> to a current tag and run the command again.</div>
+</section>
+
+<!-- ================================================================== 12 -->
+<section id="ops">
+<h2>12 · Backups and daily operations</h2>
+<div class="step" data-step="d1"><div class="num">1</div><div>
+<h4>Make and verify a backup <label class="done"><input type="checkbox"> done</label></h4>
+<p>On your PC (venv active):</p>
+<pre><code>python -m scripts.backup create --dest backups
+python -m scripts.backup verify backups/rag-backup-YYYYMMDD-HHMMSS</code></pre>
+<p>On the Docker server:</p>
+<pre><code>docker compose --profile production run --rm backup</code></pre>
+<p>A backup folder holds the database, your <code>data/</code> folder (indexes, originals, chats) and a checksum file.</p>
+</div></div>
+<div class="step" data-step="d2"><div class="num">2</div><div>
+<h4>Schedule it daily (server) <label class="done"><input type="checkbox"> done</label></h4>
+<pre><code>crontab -e
+# add this line (02:30 every night):
+30 2 * * * cd /home/YOU/rag-ultimate &amp;&amp; docker compose --profile production run --rm backup &gt;&gt; backups/cron.log 2&gt;&amp;1</code></pre>
+<p>Copy the <code>backups/</code> folder to another machine or cloud storage regularly. MinIO files: back up with <code>mc mirror</code>.</p>
+</div></div>
+<div class="step" data-step="d3"><div class="num">3</div><div>
+<h4>Practise a restore once <label class="done"><input type="checkbox"> done</label></h4>
+<pre><code>python -m scripts.backup restore backups/rag-backup-YYYYMMDD-HHMMSS</code></pre>
+<div class="bad">Restore <b>replaces</b> the current database and data folder. It asks for confirmation first.</div>
+</div></div>
+<h3>Routine</h3>
+<div class="tablewrap"><table>
+<tr><th>How often</th><th>Task</th><th>Where</th></tr>
+<tr><td>Daily</td><td>Glance at failed ingestion jobs and blocked requests</td><td>Dashboard, Ingestion</td></tr>
+<tr><td>Weekly</td><td>Review audit log; check spend</td><td>Audit log, Dashboard</td></tr>
+<tr><td>Monthly</td><td>Update: <code>git pull</code> then <code>docker compose --profile production up -d --build</code>; database upgrades apply automatically</td><td>server</td></tr>
+<tr><td>After model or setting changes</td><td>Re-run the benchmark; compare with your baseline</td><td>Evaluation</td></tr>
+</table></div>
+</section>
+
+<!-- ================================================================== 13 -->
+<section id="inside">
+<h2>13 · How it works inside (the complete workflow)</h2>
+<p class="lead">You don't need this to use the app, but it explains what happens to every file and every question.</p>
+
+<h3 id="wf-ingest">A. When you upload a document</h3>
+<div class="flow">
+  <div class="box"><b>1 Validate</b>Real file type checked by its bytes (not the name); size limit; rejects executables, macro Office files, zip bombs</div><div class="arrow">→</div>
+  <div class="box"><b>2 Store original</b>Kept by content fingerprint (local folder or MinIO/S3); identical files stored once</div><div class="arrow">→</div>
+  <div class="box"><b>3 Read</b>PDF: text, tables, equations, figures. Office/HTML/CSV/JSON: own readers. Images and scans: Tesseract OCR</div><div class="arrow">→</div>
+  <div class="box"><b>4 Chunk</b>Split into passages (recursive, fixed, semantic or structure strategy), each keeps its page and section</div><div class="arrow">→</div>
+  <div class="box"><b>5 Embed</b>Each passage gets a "meaning vector" (local model or Ollama)</div><div class="arrow">→</div>
+  <div class="box"><b>6 Register</b>Database records document, version, chunks, sensitivity; PII found → auto <i>confidential</i>; older version's vectors removed</div>
+</div>
+<p>Failures are retried with increasing waits; a file that can never work (e.g. an executable) fails at once. Every attempt is visible on the <b>Ingestion</b> page.</p>
+
+<h3 id="wf-question">B. When you ask a question</h3>
+<svg viewBox="0 0 900 520" width="100%" role="img" aria-label="Question workflow from input checks to final answer">
+  <rect class="bx" x="330" y="5" width="240" height="40" rx="8"/><text x="450" y="30" text-anchor="middle">Your question</text>
+  <rect class="bxa" x="250" y="65" width="400" height="48" rx="8"/><text x="450" y="85" text-anchor="middle" font-weight="700">① Input checks</text><text class="mut" x="450" y="103" text-anchor="middle">rate limit · injection · harmful · topic · personal data</text>
+  <rect class="bx" x="690" y="65" width="200" height="48" rx="8"/><text x="790" y="85" text-anchor="middle">Blocked → message</text><text class="mut" x="790" y="103" text-anchor="middle">+ audit log</text>
+  <rect class="bxa" x="250" y="133" width="400" height="48" rx="8"/><text x="450" y="153" text-anchor="middle" font-weight="700">② Permission filter</text><text class="mut" x="450" y="171" text-anchor="middle">only your tenant's documents you may read (current version)</text>
+  <rect class="bx" x="250" y="201" width="400" height="48" rx="8"/><text x="450" y="221" text-anchor="middle" font-weight="700">③ Query Understanding Agent</text><text class="mut" x="450" y="239" text-anchor="middle">task type · rewrites the query into search variants</text>
+  <rect class="bx" x="250" y="269" width="400" height="48" rx="8"/><text x="450" y="289" text-anchor="middle" font-weight="700">④ Retrieval (or Summarization) Agent</text><text class="mut" x="450" y="307" text-anchor="middle">keyword + meaning + fuzzy → fusion → rerank → best passages</text>
+  <rect class="bx" x="250" y="337" width="400" height="48" rx="8"/><text x="450" y="357" text-anchor="middle" font-weight="700">⑤ Reasoning Agent (the AI model)</text><text class="mut" x="450" y="375" text-anchor="middle">model chosen by the router · answers only from passages, with citations</text>
+  <rect class="bx" x="250" y="405" width="400" height="48" rx="8"/><text x="450" y="425" text-anchor="middle" font-weight="700">⑥ Verification + Quality Agents</text><text class="mut" x="450" y="443" text-anchor="middle">numbers vs sources · fix once · otherwise withhold the answer</text>
+  <rect class="bxa" x="250" y="473" width="400" height="42" rx="8"/><text x="450" y="491" text-anchor="middle" font-weight="700">⑦ Output checks → answer + evidence</text><text class="mut" x="450" y="507" text-anchor="middle">secrets · prompt leaks · personal data · unauthorised sources</text>
+  <path class="ln" d="M450 45 V63"/><path class="ln" d="M450 113 V131"/><path class="ln" d="M450 181 V199"/><path class="ln" d="M450 249 V267"/><path class="ln" d="M450 317 V335"/><path class="ln" d="M450 385 V403"/><path class="ln" d="M450 453 V471"/>
+  <path class="ln" d="M650 89 H688"/>
+  <text class="mut" x="20" y="300">0 AI tokens</text><text class="mut" x="20" y="316">(runs locally)</text>
+  <text class="mut" x="20" y="366">usually 1 AI call</text>
+</svg>
+<p>Every step is timed and shown on <b>Agent traces</b>; logs carry a request ID but never your question text.</p>
+
+<h3 id="wf-route">C. How the model router picks an AI</h3>
+<ol>
+<li>Start from the configured list (your manual choice first, then the priority order).</li>
+<li>Remove models that are: not configured · wrong for the <b>mode</b> (local/cloud) · <b>cloud while the documents are confidential</b> · too small for the text · recently failing (circuit breaker).</li>
+<li>Order what is left by the strategy (priority, cost, latency or auto).</li>
+<li>Try the first; on a temporary error retry, then move to the next. The reason is shown under <b>Why this model</b>.</li>
+</ol>
+
+<h3 id="wf-guard">D. Security layers at a glance</h3>
+<div class="grid2">
+<div class="card"><b>Files</b><br>type sniffing, size limit, macro/zip-bomb/executable rejection</div>
+<div class="card"><b>Questions</b><br>prompt injection, harmful content, topic rules, personal-data redaction</div>
+<div class="card"><b>Documents as data</b><br>instructions hidden inside documents are neutralised, never obeyed</div>
+<div class="card"><b>Access</b><br>accounts, roles, tenants, per-document roles, retrieval-time filtering</div>
+<div class="card"><b>Answers</b><br>grounding check, abstention, secret and prompt-leak filtering, PII masking</div>
+<div class="card"><b>Records</b><br>audit log of blocks, logins, uploads, deletions, policy changes</div>
+</div>
+<div class="warn">These detectors are rule-based. They block common attacks but can miss clever new ones, and occasionally block an innocent question. Treat them as strong seat belts, not a guarantee (details: <code>docs/SECURITY_AUDIT.md</code>).</div>
+</section>
+
+<!-- ================================================================== 14 -->
+<section id="trouble">
+<h2>14 · Troubleshooting</h2>
+<div class="tablewrap"><table>
+<tr><th>Problem</th><th>Fix</th></tr>
+<tr><td><code>python</code> is not recognised (Windows)</td><td>Reinstall Python and tick "Add python.exe to PATH", or use <code>py</code> instead of <code>python</code>.</td></tr>
+<tr><td>"running scripts is disabled" when activating</td><td><code>Set-ExecutionPolicy -Scope CurrentUser RemoteSigned</code>, then activate again.</td></tr>
+<tr><td><code>pip install</code> fails on one package</td><td>Make sure you use Python 3.12/3.13 (<code>python --version</code>), upgrade pip, retry. On Windows, install the "Microsoft C++ Build Tools" if a build error mentions a compiler.</td></tr>
+<tr><td>Sidebar: "add GROQ_API_KEY" / "add OLLAMA_BASE_URL"</td><td>No model configured: edit <code>.env</code>, save, restart the app. The app still shows evidence without a model.</td></tr>
+<tr><td>Ollama shows red</td><td>Is Ollama running? (<code>ollama list</code>). URL must be <code>http://localhost:11434</code>; in Docker it is <code>http://ollama:11434</code>.</td></tr>
+<tr><td>"model 'llama3.1:8b' not found"</td><td><code>ollama pull llama3.1:8b</code> or set <code>OLLAMA_MODEL</code> to a model from <code>ollama list</code>.</td></tr>
+<tr><td>"This request involves confidential documents…"</td><td>Working as designed: confidential documents need a local model. Configure Ollama, relabel the document, or (if allowed) set <code>ALLOW_SENSITIVE_CLOUD=true</code>.</td></tr>
+<tr><td>"Semantic search is off… keyword matching only"</td><td>The local search model hasn't downloaded yet (offline/firewall). It retries in the background; answers still work.</td></tr>
+<tr><td>Images/scans give no text</td><td>Tesseract not installed or not on PATH: <code>tesseract --version</code>.</td></tr>
+<tr><td>Port 8501 already in use</td><td><code>streamlit run app.py --server.port 8502</code></td></tr>
+<tr><td>Forgot admin password / account locked</td><td>Wait 15 min for a lock; or create another admin: <code>python -m scripts.create_admin --username admin2</code>.</td></tr>
+<tr><td>Docker: "manifest unknown"</td><td>Change that service's <code>image:</code> tag in <code>docker-compose.yml</code> to a current version.</td></tr>
+<tr><td>HTTPS certificate not issued</td><td>DNS A record must point to the server; ports 80 and 443 open; <code>docker compose logs caddy</code>.</td></tr>
+<tr><td>Something else</td><td>Read the terminal / <code>docker compose logs app api</code>. Each error has a <i>request id</i>; search the logs for it.</td></tr>
+</table></div>
+</section>
+
+<!-- ================================================================== 15 -->
+<section id="cheat">
+<h2>15 · Command cheat sheet</h2>
+<div class="tabs" data-os>
+  <div class="tabbar"></div>
+  <div class="tabpanel" data-tab="Windows"><pre><code>cd C:\projects\rag-ultimate-main
+.venv\Scripts\Activate.ps1             # every new terminal
+streamlit run app.py                    # UI   http://localhost:8501
+uvicorn api.main:app --port 8000        # API  http://127.0.0.1:8000/docs
+python -m pytest                        # tests
+python -m evaluation.benchmark          # quality report
+python -m scripts.backup create --dest backups
+python -m scripts.create_admin --username NAME
+python -m database.migrations --status</code></pre></div>
+  <div class="tabpanel" data-tab="macOS"><pre><code>cd ~/projects/rag-ultimate-main
+source .venv/bin/activate               # every new terminal
+streamlit run app.py                    # UI   http://localhost:8501
+uvicorn api.main:app --port 8000        # API  http://127.0.0.1:8000/docs
+python -m pytest                        # tests
+python -m evaluation.benchmark          # quality report
+python -m scripts.backup create --dest backups
+python -m scripts.create_admin --username NAME
+python -m database.migrations --status</code></pre></div>
+  <div class="tabpanel" data-tab="Linux"><pre><code>cd ~/projects/rag-ultimate-main
+source .venv/bin/activate               # every new terminal
+streamlit run app.py                    # UI   http://localhost:8501
+uvicorn api.main:app --port 8000        # API  http://127.0.0.1:8000/docs
+python -m pytest                        # tests
+python -m evaluation.benchmark          # quality report
+python -m scripts.backup create --dest backups
+python -m scripts.create_admin --username NAME
+python -m database.migrations --status
+# server
+docker compose --profile production up -d --build
+docker compose --profile production logs -f app api
+docker compose --profile production run --rm backup</code></pre></div>
+</div>
+</section>
+
+<!-- ================================================================== 16 -->
+<section id="glossary">
+<h2>16 · Glossary</h2>
+<div class="tablewrap"><table>
+<tr><td><b>RAG</b></td><td>Retrieval-Augmented Generation: find relevant passages first, then let the AI answer from them.</td></tr>
+<tr><td><b>Chunk</b></td><td>A short passage of a document, the unit that is searched and cited.</td></tr>
+<tr><td><b>Embedding</b></td><td>A list of numbers describing a passage's meaning, so similar meanings can be found.</td></tr>
+<tr><td><b>BM25</b></td><td>Classic keyword search scoring; great for exact symbols and part numbers.</td></tr>
+<tr><td><b>RRF / fusion</b></td><td>Combines the rankings of several search methods into one list.</td></tr>
+<tr><td><b>Reranker</b></td><td>A small model that re-orders the top candidates by how well they answer the question.</td></tr>
+<tr><td><b>Ollama</b></td><td>Free program that runs AI models on your own computer.</td></tr>
+<tr><td><b>Prompt injection</b></td><td>Text that tries to make the AI ignore its rules.</td></tr>
+<tr><td><b>PII</b></td><td>Personally identifiable information: e-mails, phone numbers, ID and account numbers.</td></tr>
+<tr><td><b>Tenant</b></td><td>A separate organisation/space; nothing crosses between tenants.</td></tr>
+<tr><td><b>venv</b></td><td>A private folder of Python libraries for one project.</td></tr>
+<tr><td><b>.env</b></td><td>Your private settings file (keys, passwords, options).</td></tr>
+<tr><td><b>Docker / Compose profile</b></td><td>Packaged services; a profile is a named set of them started together.</td></tr>
+<tr><td><b>CI</b></td><td>Automatic tests and scans that GitHub runs on every push.</td></tr>
+</table></div>
+<p class="lead" style="margin-top:24px">More detail inside the project: <code>README.md</code>, <code>docs/USER_GUIDE.md</code>, <code>docs/ADMIN_GUIDE.md</code>, <code>docs/DEPLOYMENT_GUIDE.md</code>, <code>docs/SECURITY_AUDIT.md</code>, <code>docs/FINAL_TEST_REPORT.md</code>.</p>
+</section>
+</main>
+</div>
+
+<script>
+(function(){
+  var store = {
+    get: function(k){ try { return localStorage.getItem(k); } catch(e){ return null; } },
+    set: function(k,v){ try { localStorage.setItem(k,v); } catch(e){} },
+    del: function(k){ try { localStorage.removeItem(k); } catch(e){} }
+  };
+  // OS tabs (synchronised)
+  var ua = navigator.userAgent || "";
+  var guess = /Win/i.test(ua) ? "Windows" : (/Mac/i.test(ua) ? "macOS" : "Linux");
+  var current = store.get("rag-guide-os") || guess;
+  var groups = document.querySelectorAll(".tabs[data-os]");
+  function select(os){
+    current = os; store.set("rag-guide-os", os);
+    groups.forEach(function(g){
+      g.querySelectorAll(".tabbar button").forEach(function(b){ b.setAttribute("aria-selected", b.dataset.tab === os ? "true" : "false"); });
+      g.querySelectorAll(".tabpanel").forEach(function(p){ p.classList.toggle("active", p.dataset.tab === os); });
+    });
+  }
+  groups.forEach(function(g){
+    var bar = g.querySelector(".tabbar");
+    bar.setAttribute("role","tablist");
+    g.querySelectorAll(".tabpanel").forEach(function(p){
+      var b = document.createElement("button");
+      b.type = "button"; b.textContent = p.dataset.tab; b.dataset.tab = p.dataset.tab; b.setAttribute("role","tab");
+      b.addEventListener("click", function(){ select(p.dataset.tab); });
+      bar.appendChild(b);
+    });
+  });
+  select(current);
+  // Copy buttons
+  document.querySelectorAll("pre").forEach(function(pre){
+    var btn = document.createElement("button");
+    btn.className = "copy"; btn.type = "button"; btn.textContent = "Copy";
+    btn.addEventListener("click", function(){
+      var text = pre.querySelector("code") ? pre.querySelector("code").innerText : pre.innerText;
+      var done = function(){ btn.textContent = "Copied"; setTimeout(function(){ btn.textContent = "Copy"; }, 1400); };
+      if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(text).then(done, done); }
+      else { var t = document.createElement("textarea"); t.value = text; document.body.appendChild(t); t.select();
+             try { document.execCommand("copy"); } catch(e){} document.body.removeChild(t); done(); }
+    });
+    pre.appendChild(btn);
+  });
+  // Step progress
+  var steps = document.querySelectorAll(".step[data-step]");
+  function refresh(){
+    var n = 0;
+    steps.forEach(function(s){ if (s.querySelector("input").checked) n++; });
+    document.getElementById("ptext").textContent = n + " of " + steps.length + " steps done";
+    document.getElementById("pbar").style.width = (steps.length ? 100 * n / steps.length : 0) + "%";
+  }
+  steps.forEach(function(s){
+    var cb = s.querySelector("label.done input"), key = "rag-guide-step-" + s.dataset.step;
+    cb.checked = store.get(key) === "1"; s.classList.toggle("is-done", cb.checked);
+    cb.addEventListener("change", function(){ store.set(key, cb.checked ? "1" : "0"); s.classList.toggle("is-done", cb.checked); refresh(); });
+  });
+  document.getElementById("reset").addEventListener("click", function(){
+    steps.forEach(function(s){ var cb = s.querySelector("input"); cb.checked = false; s.classList.remove("is-done"); store.del("rag-guide-step-" + s.dataset.step); });
+    refresh();
+  });
+  refresh();
+  // Theme toggle
+  var root = document.documentElement, saved = store.get("rag-guide-theme");
+  if (saved) root.setAttribute("data-theme", saved);
+  document.getElementById("themebtn").addEventListener("click", function(){
+    var dark = root.getAttribute("data-theme") ? root.getAttribute("data-theme") === "dark"
+             : window.matchMedia("(prefers-color-scheme: dark)").matches;
+    var next = dark ? "light" : "dark"; root.setAttribute("data-theme", next); store.set("rag-guide-theme", next);
+  });
+})();
+</script>
+</body>
+</html>
