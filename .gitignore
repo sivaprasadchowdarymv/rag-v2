@@ -8,3 +8,16 @@ backups/
 .venv/
 venv/
 .streamlit/secrets.toml
+data/
+__pycache__/
+*.pyc
+.pytest_cache/
+.env
+.ruff_cache/
+backups/
+.venv/
+venv/
+.streamlit/secrets.toml
+.env.*
+!.env.example
+*.log
