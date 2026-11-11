@@ -242,7 +242,9 @@ def cmd_setup(args) -> None:
     say("Creating / upgrading the database tables…", "step")
     if run([py, "-m", "database.migrations"]) != 0:
         say("Database setup failed. Check DATABASE_URL (user, password, host, database name) and that "
-            "PostgreSQL is running, then run:  python launch.py check", "bad")
+            "PostgreSQL is reachable (some networks block port 5432 — try another network), then run:  "
+            "python launch.py check.  To continue with a local database, empty DATABASE_URL= in .env "
+            "and run setup again.", "bad")
         sys.exit(1)
     say("Setup complete. Next:  python launch.py check   then   python launch.py run", "ok")
 

@@ -161,8 +161,8 @@ pymupdf4llm==2.1
     #   pymupdf-layout
 pytesseract==0.3.13
     # via -r requirements.txt
-python-dateutil==4.0.0
-    # via pandas
+python-dateutil==2.9.0.post0
+    # via pandas, botocore (boto3 needs <3.0; 4.x conflicts with requirements-optional.txt)
 python-docx==1.2.0
     # via -r requirements.txt
 python-dotenv==1.2.4
@@ -191,6 +191,8 @@ rpds-py==2026.9.1
     # via
     #   jsonschema
     #   referencing
+six==1.17.0
+    # via python-dateutil
 sqlalchemy==2.1.8
     # via -r requirements.txt
 starlette==1.10.0

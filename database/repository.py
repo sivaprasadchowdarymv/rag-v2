@@ -47,7 +47,10 @@ def make_engine(url: str) -> Engine:
         return engine
     if url.startswith("postgresql://"):
         url = "postgresql+psycopg://" + url[len("postgresql://"):]
-    return create_engine(url, pool_pre_ping=True, pool_size=5, max_overflow=10)
+    # Fail fast (instead of hanging for minutes) when the server cannot be reached, e.g. a blocked port 5432.
+    # A connect_timeout given in the URL itself still wins.
+    args = {} if "connect_timeout=" in url else {"connect_timeout": 10}
+    return create_engine(url, pool_pre_ping=True, pool_size=5, max_overflow=10, connect_args=args)
 
 
 def hash_token(token: str) -> str:
